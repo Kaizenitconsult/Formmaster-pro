@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FormMaster Pro — Kaizen Technologies</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1A2744;--navy2:#243354;--gold:#D4A843;--gold2:#B8902D;--bg:#F0F2F8;--card:#fff;--border:#E5E7EB;--text:#1F2937;--muted:#6B7280;--light:#F8F9FC;--green:#22C55E;--amber:#F59E0B;--red:#EF4444;--purple:#7C3AED;--blue:#3B82F6;}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+button{cursor:pointer;font-family:inherit}
+input,select,textarea{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#f1f1f1}
+::-webkit-scrollbar-thumb{background:#c1c1c1;border-radius:3px}
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:260px;min-width:260px;background:var(--navy);display:flex;flex-direction:column;transition:width .25s;overflow:hidden;position:relative;z-index:10}
+#sidebar.collapsed{width:64px;min-width:64px}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;flex-wrap:wrap}
+#content{flex:1;overflow-y:auto;padding:22px}
+.sb-logo{padding:16px 14px 13px;border-bottom:1px solid #ffffff18;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:70px}
+.sb-logo-icon{flex-shrink:0;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--gold)}
+.sb-logo-icon img{width:100%;height:100%;object-fit:cover}
+.sb-logo-text .name{color:#fff;font-weight:800;font-size:14px;line-height:1.2;white-space:nowrap}
+.sb-logo-text .sub{color:var(--gold);font-size:10px;font-weight:600;letter-spacing:.06em;white-space:nowrap}
+.sb-class-box{margin:10px 10px 0;background:#ffffff0A;border-radius:10px;padding:10px 12px}
+.sb-class-box .lbl{color:var(--gold);font-size:10px;font-weight:700;letter-spacing:.08em;margin-bottom:3px;white-space:nowrap}
+.sb-class-box .cls{color:#fff;font-weight:800;font-size:14px;white-space:nowrap}
+.sb-class-box .info{color:#94A3B8;font-size:11px;margin-top:2px;white-space:nowrap}
+nav.sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.nav-section{font-size:9px;font-weight:700;color:#475569;letter-spacing:.1em;text-transform:uppercase;padding:8px 8px 4px;white-space:nowrap}
+.nav-btn{display:flex;align-items:center;gap:11px;width:100%;padding:10px 12px;background:transparent;border:none;border-radius:9px;margin-bottom:3px;transition:background .15s;white-space:nowrap;text-align:left}
+.nav-btn.active{background:var(--gold)}
+.nav-btn:hover:not(.active){background:#ffffff14}
+.nav-btn .ic{font-size:17px;flex-shrink:0;width:22px;text-align:center}
+.nav-btn .lbl{font-size:12.5px;font-weight:500;color:#CBD5E1}
+.nav-btn.active .lbl{color:var(--navy);font-weight:700}
+#sidebar.collapsed .nav-btn{justify-content:center;padding:10px}
+#sidebar.collapsed .nav-btn .lbl,#sidebar.collapsed .sb-logo-text,#sidebar.collapsed .sb-class-box,#sidebar.collapsed .sb-foot,#sidebar.collapsed .nav-section{display:none}
+.sb-foot{padding:10px 14px;border-top:1px solid #ffffff18;font-size:10px;color:#475569;text-align:center;line-height:1.7}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat-card{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.stat-card .val{font-size:26px;font-weight:800}
+.stat-card .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+.stat-card .sub{font-size:11px;color:#9CA3AF;margin-top:1px}
+.data-table-wrap{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table thead{background:var(--light);border-bottom:2px solid var(--border)}
+.data-table th{padding:9px 13px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.data-table td{padding:9px 13px;border-bottom:1px solid #F3F4F6;vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tbody tr:hover{background:#FEF9EC}
+.badge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:12px;font-weight:700}
+.avatar{border-radius:50%;object-fit:cover;border:2px solid var(--gold);flex-shrink:0}
+.avatar-init{border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0;border:2px solid var(--gold)}
+.att-bar-wrap{display:flex;align-items:center;gap:7px}
+.att-bar-bg{flex:1;max-width:80px;height:7px;background:#F3F4F6;border-radius:4px;overflow:hidden}
+.att-bar-fill{height:100%;border-radius:4px}
+.att-pct{font-size:12px;font-weight:700;min-width:36px}
+.action-btn{border:none;border-radius:7px;padding:5px 8px;font-size:14px;transition:opacity .15s}
+.action-btn:hover{opacity:.8}
+.modal-overlay{position:fixed;inset:0;background:rgba(10,16,35,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:14px;animation:fadeIn .18s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{background:#fff;border-radius:16px;width:100%;max-height:93vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.4);animation:slideUp .2s}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-sm{max-width:460px}.modal-md{max-width:600px}.modal-lg{max-width:760px}.modal-xl{max-width:940px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:2}
+.modal-header h2{font-size:17px;font-weight:700;color:var(--navy)}
+.modal-close{background:none;border:none;font-size:24px;color:var(--muted);line-height:1;padding:0 4px}
+.modal-body{padding:18px 22px 22px}
+.fg{margin-bottom:14px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.opt-lbl{font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
+.form-input{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);outline:none;transition:border .15s;background:#fff}
+.form-input:focus{border-color:var(--navy)}
+.form-input::placeholder{color:#B0B7C3}
+textarea.form-input{resize:vertical;min-height:60px}
+.form-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;border:none;transition:all .15s;white-space:nowrap}
+.btn:hover{opacity:.88}
+.btn-primary{background:var(--gold);color:var(--navy)}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-outline{background:#fff;color:#374151;border:1px solid var(--border)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn-xs{padding:4px 9px;font-size:11px}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:21px;font-weight:800;color:var(--navy)}
+.page-sub{font-size:13px;color:var(--muted);margin-top:3px}
+.header-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.att-pill{border:1.5px solid;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+#setup-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1A2744 0%,#0F1D35 100%);display:flex;align-items:center;justify-content:center;z-index:2000;padding:16px;overflow-y:auto}
+.setup-card{background:#fff;border-radius:20px;width:100%;max-width:580px;overflow:hidden;box-shadow:0 32px 100px rgba(0,0,0,.5)}
+.setup-header{background:var(--navy);padding:26px 30px;text-align:center}
+.setup-logo{width:62px;height:62px;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--gold);font-size:30px;margin:0 auto 12px;cursor:pointer;border:3px solid transparent;transition:border .2s}
+.setup-logo:hover{border-color:rgba(255,255,255,.4)}
+.setup-logo img{width:100%;height:100%;object-fit:cover}
+.setup-header h1{color:#fff;font-size:21px;font-weight:800;margin-bottom:4px}
+.setup-header p{color:#94A3B8;font-size:13px;line-height:1.5}
+.setup-body{padding:26px 30px}
+.setup-step{display:none}
+.setup-step.active{display:block}
+.setup-progress{display:flex;gap:8px;margin-bottom:22px;justify-content:center;align-items:center}
+.setup-dot{width:28px;height:6px;border-radius:3px;background:#E5E7EB;transition:background .3s}
+.setup-dot.done{background:var(--gold)}
+.profile-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.profile-info-item{background:var(--light);border-radius:8px;padding:8px 10px}
+.profile-info-item .k{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:2px}
+.profile-info-item .v{font-size:12px;font-weight:700;color:var(--navy)}
+.section-title{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 8px}
+.log-entry{background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px 18px;margin-bottom:12px;border-left:4px solid}
+.log-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.log-decision{background:#F0FDF4;border-left:3px solid var(--green);border-radius:7px;padding:7px 11px;margin-top:8px;font-size:13px;color:#374151}
+.alert-banner{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:5px 12px;font-size:12px;color:var(--red);font-weight:600}
+.info-banner{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:8px 14px;font-size:12px;color:#1D4ED8;margin-bottom:14px}
+.warn-banner{background:#FEF9EC;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px;font-size:13px;color:#92400E;margin-top:14px}
+.sync-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.sync-ok{background:var(--green)}.sync-off{background:#9CA3AF}.sync-busy{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;background:var(--light)}
+.drop-zone:hover,.drop-zone.over{border-color:var(--gold);background:#FEF9EC}
+.dz-icon{font-size:38px;margin-bottom:10px}
+.dz-text{font-size:13px;color:var(--muted)}
+.dz-sub{font-size:11px;color:#9CA3AF;margin-top:4px}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:90px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar-fill{width:100%;border-radius:4px 4px 0 0;transition:height .4s;min-height:3px}
+.bar-lbl{font-size:10px;font-weight:700}
+.bar-count{font-size:10px;font-weight:700;color:var(--navy)}
+.heatmap{display:flex;gap:3px}
+.heat-cell{width:16px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:700;cursor:default;flex-shrink:0}
+#toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;border-left:4px solid var(--gold);max-width:320px}
+#toast.show{transform:translateY(0);opacity:1}
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty-state .icon{font-size:44px;margin-bottom:10px}
+.empty-state p{font-size:13px}
+.search-box{padding:9px 13px 9px 34px;border:1px solid var(--border);border-radius:9px;font-size:13px;outline:none;color:var(--text);background:#fff}
+.search-wrap{position:relative}
+.search-wrap::before{content:"🔍";position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none}
+.tab-bar{display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:16px;flex-wrap:wrap}
+.tab-btn{padding:8px 14px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--gold)}
+.photo-upload-box{display:flex;align-items:center;gap:14px;padding:12px;background:var(--light);border-radius:10px;margin-bottom:14px}
+.score-input{width:58px;padding:6px 7px;border:1px solid var(--border);border-radius:6px;font-size:13px;text-align:center;color:var(--text);outline:none}
+.score-input:focus{border-color:var(--navy)}
+.send-wa{background:#25D366;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px}
+.send-email{background:#4285F4;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px}
+.field-optional::after{content:" (optional)";font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
+@media print{#app,#setup-screen{display:none!important}#print-area{display:block!important}}
+#print-area{display:none}
+@media(max-width:768px){.stat-grid{grid-template-columns:repeat(2,1fr)}#sidebar{width:64px;min-width:64px}#sidebar .sb-logo-text,#sidebar .sb-class-box,#sidebar .sb-foot,#sidebar .nav-btn .lbl,#sidebar .nav-section{display:none}#sidebar .nav-btn{justify-content:center;padding:10px}#content{padding:14px}.fg2{grid-template-columns:1fr}.profile-info-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.stat-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+<div class="setup-card">
+  <div class="setup-header">
+    <div class="setup-logo" id="setup-logo-btn" onclick="document.getElementById('setup-logo-file').click()" title="Click to upload school logo/crest">
+      <span id="setup-logo-default">🎓</span>
+      <img id="setup-logo-img" style="display:none;width:100%;height:100%;object-fit:cover">
+    </div>
+    <input type="file" id="setup-logo-file" accept=".jpg,.jpeg,.png,.svg,.gif" style="display:none" onchange="handleSetupLogo(this)">
+    <h1>FormMaster Pro</h1>
+    <p>Class Management Suite · Kaizen Technologies<br>
+    <span style="font-size:11px;color:#D4A843">Click the icon above to upload your school logo/crest</span></p>
+  </div>
+  <div class="setup-body">
+    <div class="setup-progress">
+      <div class="setup-dot done" id="dot-1"></div>
+      <div class="setup-dot" id="dot-2"></div>
+      <div class="setup-dot" id="dot-3"></div>
+      <div class="setup-dot" id="dot-4"></div>
+    </div>
+    <!-- STEP 1 -->
+    <div class="setup-step active" id="step-1">
+      <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">Welcome, Form Master</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Set up your profile. Only your name is required.</p>
+      <div class="fg2">
+        <div><label class="form-label">Your Full Name / Title *</label><input class="form-input" id="setup-teacher" placeholder="e.g. Mr. Kwame Owusu"></div>
+        <div><label class="form-label">Staff ID <span class="opt-lbl">(optional)</span></label><input class="form-input" id="setup-staff-id" placeholder="e.g. STF-001"></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">School Name</label><input class="form-input" id="setup-school" placeholder="e.g. Accra Senior High School"></div>
+        <div><label class="form-label">Academic Year</label><input class="form-input" id="setup-year" value="2024/2025" placeholder="2024/2025"></div>
+      </div>
+      <div class="fg">
+        <label class="form-label">Semester</label>
+        <select class="form-input" id="setup-semester"><option>First Semester</option><option>Second Semester</option></select>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn btn-primary" onclick="setupNext(1)">Continue →</button></div>
+    </div>
+    <!-- STEP 2 -->
+    <div class="setup-step" id="step-2">
+      <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">Class Details</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Configure your assigned class.</p>
+      <div class="fg2">
+        <div><label class="form-label">Class / Form Name *</label><input class="form-input" id="setup-class" placeholder="e.g. Form 3A"></div>
+        <div><label class="form-label">Programme / Stream <span class="opt-lbl">(optional)</span></label><input class="form-input" id="setup-stream" placeholder="e.g. General Science"></div>
+      </div>
+      <div class="fg"><label class="form-label">House Names <span class="opt-lbl">(comma-separated)</span></label><input class="form-input" id="setup-houses" value="Doe, Fiagbe, Adeladza, Sorkpor"></div>
+      <div class="fg"><label class="form-label">Core Subjects <span class="opt-lbl">(comma-separated)</span></label><input class="form-input" id="setup-core-subjects" value="Mathematics, English Language, Integrated Science, Social Studies"></div>
+      <div class="fg"><label class="form-label">Elective Subjects <span class="opt-lbl">(optional, comma-separated)</span></label><input class="form-input" id="setup-elective-subjects" placeholder="e.g. Physics, Chemistry, Economics"></div>
+      <div class="form-footer"><button class="btn btn-outline" onclick="setupBack(2)">← Back</button><button class="btn btn-primary" onclick="setupNext(2)">Continue →</button></div>
+    </div>
+    <!-- STEP 3 -->
+    <div class="setup-step" id="step-3">
+      <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">Cross-Device Sync <span style="font-size:12px;font-weight:500;color:var(--muted)">(optional)</span></h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Enable real-time attendance sync across devices. Requires a free JSONBin.io account.</p>
+      <div class="info-banner">📡 <strong>How:</strong> Visit <a href="https://jsonbin.io" target="_blank" style="color:var(--blue)">jsonbin.io</a> → create free account → API Keys → copy your Master Key. Paste it below to enable multi-device sync.</div>
+      <div class="fg"><label class="form-label">JSONBin Master Key <span class="opt-lbl">(optional)</span></label><input class="form-input" type="password" id="setup-jsonbin-key" placeholder="$2b$10$xxxx… (from jsonbin.io)"></div>
+      <div class="fg"><label class="form-label">Existing Bin ID <span class="opt-lbl">(leave blank to auto-create)</span></label><input class="form-input" id="setup-bin-id" placeholder="e.g. 64abc123ef…"></div>
+      <div class="form-footer">
+        <button class="btn btn-outline" onclick="setupBack(3)">← Back</button>
+        <button class="btn btn-outline" onclick="setupNext(3)" style="color:var(--muted)">Skip →</button>
+        <button class="btn btn-primary" onclick="setupNext(3)">Continue →</button>
+      </div>
+    </div>
+    <!-- STEP 4 -->
+    <div class="setup-step" id="step-4">
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-size:48px;margin-bottom:12px">✅</div>
+        <h3 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px">All Set!</h3>
+        <p id="setup-summary" style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px"></p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:22px">Add students manually or import them from your school portal (CSV/Excel).</p>
+        <button class="btn btn-primary" style="font-size:15px;padding:12px 32px" onclick="launchApp()">Launch FormMaster Pro 🚀</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <div id="sidebar">
+    <div class="sb-logo" onclick="toggleSidebar()">
+      <div class="sb-logo-icon" id="sb-logo-icon">
+        <span id="sb-logo-default">🎓</span>
+        <img id="sb-logo-img" style="display:none;width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="sb-logo-text">
+        <div class="name">FormMaster Pro</div>
+        <div class="sub">Class Management Suite</div>
+      </div>
+    </div>
+    <div class="sb-class-box">
+      <div class="lbl">CURRENT CLASS</div>
+      <div class="cls" id="sb-class-name">—</div>
+      <div class="info" id="sb-class-meta">—</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-section">CLASS MANAGEMENT</div>
+      <button class="nav-btn active" onclick="navigate('roster')" id="nav-roster"><span class="ic">👥</span><span class="lbl">Student Roster & Profiles</span></button>
+      <button class="nav-btn" onclick="navigate('attendance')" id="nav-attendance"><span class="ic">📋</span><span class="lbl">Daily Attendance Log</span></button>
+      <button class="nav-btn" onclick="navigate('grades')" id="nav-grades"><span class="ic">📝</span><span class="lbl">Academic Performance</span></button>
+      <div class="nav-section">REPORTS & TOOLS</div>
+      <button class="nav-btn" onclick="navigate('import')" id="nav-import"><span class="ic">📥</span><span class="lbl">Import from School Portal</span></button>
+      <button class="nav-btn" onclick="navigate('performance')" id="nav-performance"><span class="ic">📊</span><span class="lbl">Analytics & Rankings</span></button>
+      <button class="nav-btn" onclick="navigate('reports')" id="nav-reports"><span class="ic">📤</span><span class="lbl">Report Cards & Dispatch</span></button>
+      <div class="nav-section">OTHER</div>
+      <button class="nav-btn" onclick="navigate('log')" id="nav-log"><span class="ic">📓</span><span class="lbl">Class Meeting Log</span></button>
+      <button class="nav-btn" onclick="navigate('settings')" id="nav-settings"><span class="ic">⚙️</span><span class="lbl">Settings & Sync</span></button>
+    </nav>
+    <div class="sb-foot">
+      <div style="margin-bottom:4px"><span class="sync-dot sync-off" id="sync-dot-sb"></span><span id="sync-label-sb" style="font-size:10px;color:#475569">Offline mode</span></div>
+      <div>Francis Normanyo · Kaizen Technologies</div>
+    </div>
+  </div>
+  <div id="main">
+    <div id="topbar">
+      <div style="font-size:13px;color:var(--muted);min-width:0">
+        <span style="font-weight:700;color:var(--navy)" id="topbar-title">Student Roster</span>
+        <span style="margin:0 6px">·</span>
+        <span id="topbar-term" style="white-space:nowrap">—</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="alert-banner" id="att-alert" style="display:none"></div>
+        <div style="display:flex;align-items:center;font-size:12px;color:var(--muted);gap:4px">
+          <span class="sync-dot sync-off" id="sync-dot-top"></span>
+          <span id="sync-label-top">Local only</span>
+        </div>
+        <div style="width:34px;height:34px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);font-weight:800;font-size:12px;flex-shrink:0" id="teacher-avatar">FM</div>
+      </div>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+<div id="print-area"></div>
+<div id="toast"></div>
+<script>
+// DATA & CONSTANTS
+const GRADE_BANDS=[{min:80,l:'A1'},{min:70,l:'B2'},{min:65,l:'B3'},{min:60,l:'C4'},{min:55,l:'C5'},{min:50,l:'C6'},{min:45,l:'D7'},{min:40,l:'E8'},{min:0,l:'F9'}];
+const GRADE_COLORS={A1:'#22C55E',B2:'#4ADE80',B3:'#86EFAC',C4:'#EAB308',C5:'#EAB308',C6:'#EAB308',D7:'#FB923C',E8:'#F87171',F9:'#EF4444'};
+const STATUS_COLORS={Present:'#22C55E',Absent:'#EF4444',Late:'#F59E0B',Excused:'#6366F1'};
+const STATUS_SHORT={Present:'P',Absent:'A',Late:'L',Excused:'E'};
+const AVATAR_COLORS=['#4F46E5','#7C3AED','#DB2777','#059669','#D97706','#DC2626','#0891B2','#65A30D','#C026D3','#EA580C'];
+
+let DB={config:null,students:[],logs:[]};
+let _editPhoto=null;
+let _autoSyncTimer=null;
+
+// STORAGE & SYNC
+function saveLocal(){localStorage.setItem('fmp_v2',JSON.stringify(DB));}
+function loadLocal(){const r=localStorage.getItem('fmp_v2');if(r){try{DB=JSON.parse(r);return true;}catch(e){}}return false;}
+
+async function syncPush(){
+  const cfg=DB.config;if(!cfg||!cfg.jsonbinKey)return false;
+  _setSyncStatus('busy');
+  try{
+    const url=cfg.binId?`https://api.jsonbin.io/v3/b/${cfg.binId}`:'https://api.jsonbin.io/v3/b';
+    const method=cfg.binId?'PUT':'POST';
+    const hdrs={'Content-Type':'application/json','X-Master-Key':cfg.jsonbinKey};
+    if(!cfg.binId)hdrs['X-Bin-Name']='FMP-'+Date.now();
+    const res=await fetch(url,{method,headers:hdrs,body:JSON.stringify(DB)});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(!cfg.binId&&data.metadata?.id){DB.config.binId=data.metadata.id;saveLocal();}
+    _setSyncStatus('ok');showToast('☁️ Synced to cloud');return true;
+  }catch(e){_setSyncStatus('off');showToast('⚠️ Sync failed: '+e.message,4000);return false;}
+}
+
+async function syncPull(){
+  const cfg=DB.config;if(!cfg||!cfg.jsonbinKey||!cfg.binId)return false;
+  _setSyncStatus('busy');
+  try{
+    const res=await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`,{headers:{'X-Master-Key':cfg.jsonbinKey}});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(data.record){DB=data.record;saveLocal();_setSyncStatus('ok');return true;}
+    _setSyncStatus('off');return false;
+  }catch(e){_setSyncStatus('off');return false;}
+}
+
+function _setSyncStatus(state){
+  const cls={ok:'sync-ok',off:'sync-off',busy:'sync-busy'};
+  const txt={ok:'Synced ✓',off:'Offline mode',busy:'Syncing…'};
+  document.querySelectorAll('.sync-dot').forEach(d=>{d.className='sync-dot '+cls[state];});
+  ['sync-label-sb','sync-label-top'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt[state];});
+}
+
+function scheduleAutoSync(){clearTimeout(_autoSyncTimer);if(DB.config?.jsonbinKey)_autoSyncTimer=setTimeout(syncPush,3500);}
+function saveDB(){saveLocal();scheduleAutoSync();}
+
+// HELPERS
+function gradeLabel(s){for(const g of GRADE_BANDS){if(s>=g.min)return g.l;}return 'F9';}
+function gradeColor(l){return GRADE_COLORS[l]||'#6B7280';}
+function calcTotal(sba,exam){return Math.round(Math.min(parseFloat(sba)||0,70)/70*50+Math.min(parseFloat(exam)||0,80)/80*50);}
+function calcAttPct(att){const v=Object.values(att||{});if(!v.length)return 100;return Math.round(v.filter(x=>x==='Present'||x==='Late').length/v.length*100);}
+function allSubjects(){return[...(DB.config?.subjects||[]),...(DB.config?.electiveSubjects||[])];}
+function calcAvgGrade(grades){
+  const subs=allSubjects();if(!subs.length||!grades)return 0;
+  const sc=subs.map(s=>{const g=grades[s]||{sba:0,exam:0};return calcTotal(g.sba,g.exam);});
+  return Math.round(sc.reduce((a,b)=>a+b,0)/sc.length);
+}
+function attColor(p){return p>=85?'var(--green)':p>=70?'var(--amber)':'var(--red)';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(d){try{return new Date(d+'T00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});}catch{return d||'';}}
+function posOrd(n){return n+(n===1?'st':n===2?'nd':n===3?'rd':'th');}
+function houseColor(h){
+  const p=[['#E0F2FE','#0369A1'],['#FCE7F3','#9D174D'],['#F0FDF4','#14532D'],['#FEF3C7','#92400E'],['#EDE9FE','#5B21B6'],['#FEE2E2','#991B1B']];
+  const i=(DB.config?.houses||[]).indexOf(h);return i>=0?p[i%p.length]:['#F3F4F6','#374151'];
+}
+function avatarHTML(student,size=36){
+  if(student&&student.photo)return`<img src="${student.photo}" class="avatar" style="width:${size}px;height:${size}px">`;
+  const col=AVATAR_COLORS[((student&&student.name)||'A').charCodeAt(0)%AVATAR_COLORS.length];
+  const init=((student&&student.name)||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  return`<div class="avatar-init" style="width:${size}px;height:${size}px;background:${col};font-size:${Math.round(size*.34)}px">${init}</div>`;
+}
+function showToast(msg,dur=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+
+// SETUP WIZARD
+let _setupLogo=null;
+function handleSetupLogo(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{_setupLogo=e.target.result;document.getElementById('setup-logo-default').style.display='none';const img=document.getElementById('setup-logo-img');img.src=e.target.result;img.style.display='block';};r.readAsDataURL(f);
+}
+function setupNext(step){
+  if(step===1){
+    const name=document.getElementById('setup-teacher').value.trim();
+    if(!name){alert('Please enter your name.');return;}
+    DB._tmp={teacherName:name,staffId:document.getElementById('setup-staff-id').value.trim(),school:document.getElementById('setup-school').value.trim()||'My School',emailDomain:document.getElementById('setup-email-domain').value.trim(),year:document.getElementById('setup-year').value.trim()||'2024/2025',semester:document.getElementById('setup-semester').value,logo:_setupLogo};
+  }
+  if(step===2){
+    const cls=document.getElementById('setup-class').value.trim();if(!cls){alert('Please enter class name.');return;}
+    const subjects=document.getElementById('setup-core-subjects').value.split(',').map(s=>s.trim()).filter(Boolean);
+    if(!subjects.length){alert('Please enter at least one subject.');return;}
+    Object.assign(DB._tmp,{className:cls,stream:document.getElementById('setup-stream').value.trim(),houses:document.getElementById('setup-houses').value.split(',').map(h=>h.trim()).filter(Boolean),subjects,electiveSubjects:document.getElementById('setup-elective-subjects').value.split(',').map(s=>s.trim()).filter(Boolean)});
+  }
+  if(step===3){
+    Object.assign(DB._tmp,{jsonbinKey:document.getElementById('setup-jsonbin-key').value.trim(),binId:document.getElementById('setup-bin-id').value.trim()||null,emailjsId:document.getElementById('setup-emailjs-id').value.trim()});
+    const s=DB._tmp;document.getElementById('setup-summary').textContent=`${s.teacherName} · ${s.className} · ${s.year} ${s.semester}`;
+  }
+  document.getElementById('step-'+step).classList.remove('active');
+  document.getElementById('step-'+(step+1)).classList.add('active');
+  document.getElementById('dot-'+(step+1)).classList.add('done');
+}
+function setupBack(step){document.getElementById('step-'+step).classList.remove('active');document.getElementById('step-'+(step-1)).classList.add('active');}
+function launchApp(){DB.config=DB._tmp;delete DB._tmp;saveDB();startApp();if(DB.config.jsonbinKey)syncPush();}
+
+// APP START
+function startApp(){
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  const cfg=DB.config||{};
+  if(cfg.logo){document.getElementById('sb-logo-default').style.display='none';const i=document.getElementById('sb-logo-img');i.src=cfg.logo;i.style.display='block';}
+  else{document.getElementById('sb-logo-default').style.display='';document.getElementById('sb-logo-img').style.display='none';}
+  document.getElementById('sb-class-name').textContent=cfg.className||'—';
+  document.getElementById('sb-class-meta').textContent=`${DB.students.length} Students · ${cfg.semester||''}`;
+  document.getElementById('topbar-term').textContent=`${cfg.year||''} · ${cfg.semester||''} · ${cfg.school||''}`;
+  const init=(cfg.teacherName||'FM').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('teacher-avatar').textContent=init;
+  updateAlertBanner();
+}
+window.addEventListener('load',()=>{if(loadLocal()&&DB.config){startApp();if(DB.config.jsonbinKey)syncPull().then(ok=>{if(ok){updateAlertBanner();navigate('roster');}});}});
+function updateAlertBanner(){
+  const bad=DB.students.filter(s=>calcAttPct(s.attendance)<85);
+  const el=document.getElementById('att-alert');
+  if(bad.length){el.style.display='';el.textContent=`⚠️ ${bad.length} attendance alert${bad.length>1?'s':''}`;}else el.style.display='none';
+  document.getElementById('sb-class-meta').textContent=`${DB.students.length} Students · ${(DB.config||{}).semester||''}`;
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed');}
+
+// NAVIGATION
+const PAGE_TITLES={roster:'Student Roster & Profiles',attendance:'Daily Attendance Log',grades:'Academic Performance Ledger',import:'Import from School Portal',performance:'Analytics & Rankings',reports:'Report Cards & Dispatch',log:'Class Meeting Log',settings:'Settings & Sync'};
+function navigate(page){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.getElementById('nav-'+page);if(nb)nb.classList.add('active');
+  document.getElementById('topbar-title').textContent=PAGE_TITLES[page]||page;
+  ({roster:renderRoster,attendance:renderAttendance,grades:renderGrades,import:renderImport,performance:renderPerformance,reports:renderReports,log:renderLog,settings:renderSettings}[page]||renderRoster)();
+}
+
+// ROSTER
+let rosterSearch='';
+function renderRoster(){
+  const all=DB.students;
+  const fil=all.filter(s=>{const q=rosterSearch.toLowerCase();return!q||s.name.toLowerCase().includes(q)||(s.id||'').toLowerCase().includes(q);});
+  const boarders=all.filter(s=>s.residential==='Boarder').length;
+  const alerts=all.filter(s=>calcAttPct(s.attendance)<85).length;
+  let rows='';
+  if(!fil.length){rows=`<tr><td colspan="8"><div class="empty-state"><div class="icon">👥</div><p>${rosterSearch?'No students match your search.':'No students yet. Click "+ Add Student" to begin, or Import from the school portal.'}</p></div></td></tr>`;}
+  else{
+    fil.forEach(s=>{
+      const att=calcAttPct(s.attendance),avg=calcAvgGrade(s.grades),gl=gradeLabel(avg),gc=gradeColor(gl),ac=attColor(att),hc=houseColor(s.house);
+      const age=s.dob?new Date().getFullYear()-parseInt(s.dob.split('-')[0]):'—';
+      rows+=`<tr>
+        <td><div style="display:flex;align-items:center;gap:9px">${avatarHTML(s,36)}<div><div style="font-weight:700;color:var(--navy);font-size:13px">${esc(s.name)}</div><div style="font-size:11px;color:#9CA3AF">${esc(s.gender||'')}${age!=='—'?' · '+age+' yrs':''}</div></div></div></td>
+        <td><span class="badge" style="background:#F3F4F6;color:#374151;font-size:11px">${esc(s.id||'—')}</span></td>
+        <td>${s.house?`<span class="badge" style="background:${hc[0]};color:${hc[1]}">${esc(s.house)}</span>`:'<span style="color:#9CA3AF;font-size:12px">—</span>'}</td>
+        <td><span style="font-size:12px;font-weight:700;color:${s.residential==='Boarder'?'var(--purple)':'var(--green)'}">${esc(s.residential||'—')}</span></td>
+        <td><div class="att-bar-wrap"><div class="att-bar-bg"><div class="att-bar-fill" style="width:${att}%;background:${ac}"></div></div><span class="att-pct" style="color:${ac}">${att}%</span>${att<85?'<span title="Below 85%">⚠️</span>':''}</div></td>
+        <td><span class="badge" style="background:${gc}22;color:${gc}">${avg}% · ${gl}</span></td>
+        <td style="font-size:12px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis">${esc(s.contact||'—')}</td>
+        <td><div style="display:flex;gap:4px">
+          <button class="action-btn" style="background:#EEF2FF;color:#4F46E5" onclick="viewProfile('${s.id}')" title="View Profile">👁</button>
+          <button class="action-btn" style="background:#F0FDF4;color:var(--green)" onclick="openEditStudent('${s.id}')" title="Edit">✏️</button>
+          <button class="action-btn" style="background:#FEF9EC;color:var(--gold2)" onclick="openReportCard('${s.id}')" title="Report Card">📄</button>
+          <button class="action-btn" style="background:#FEF2F2;color:var(--red)" onclick="confirmDelete('${s.id}')" title="Remove">🗑</button>
+        </div></td>
+      </tr>`;
+    });
+  }
+  document.getElementById('content').innerHTML=`
+    <div class="page-header">
+      <div><div class="page-title">Student Roster</div><div class="page-sub">${all.length} students enrolled · ${(DB.config||{}).className||''}</div></div>
+      <div class="header-controls">
+        <div class="search-wrap"><input class="search-box" placeholder="Search name or ID…" value="${esc(rosterSearch)}" oninput="rosterSearch=this.value;renderRoster()" style="width:180px"></div>
+        <button class="btn btn-outline btn-sm" onclick="navigate('import')">📥 Import</button>
+        <button class="btn btn-primary" onclick="openAddStudent()">+ Add Student</button>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="val" style="color:var(--navy)">${all.length}</div><div class="lbl">Total Students</div></div>
+      <div class="stat-card"><div class="val" style="color:var(--purple)">${boarders}</div><div class="lbl">Boarders</div></div>
+      <div class="stat-card"><div class="val" style="color:var(--green)">${all.length-boarders}</div><div class="lbl">Day Students</div></div>
+      <div class="stat-card"><div class="val" style="color:var(--red)">${alerts}</div><div class="lbl">Attendance Alerts</div></div>
+    </div>
+    <div class="data-table-wrap"><table class="data-table">
+      <thead><tr><th>Student</th><th>ID</th><th>House</th><th>Residential</th><th>Attendance</th><th>Avg. Grade</th><th>Contact</th><th>Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ADD STUDENT
+function openAddStudent(){
+  _editPhoto=null;
+  const cfg=DB.config||{};
+  const houses=(cfg.houses||[]).map(h=>`<option value="${esc(h)}">${esc(h)}</option>`).join('');
+  const roles=['','Class Prefect','Assistant Class Prefect','House Captain','Dining Hall Prefect','Sports Prefect','Library Prefect','Sanitation Prefect','Other Prefect'];
+  showModal('Add New Student','modal-lg',`
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab(this,'add-bio')">📋 Biodata</button>
+      <button class="tab-btn" onclick="switchTab(this,'add-grades')">📚 Grades (optional)</button>
+    </div>
+    <div id="add-bio">
+      <div class="photo-upload-box">
+        <div id="add-photo-prev">${avatarHTML({name:'New',photo:null},60)}</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px">Passport Photo <span style="font-size:11px;color:var(--muted)">(optional)</span></div>
+          <button class="btn btn-navy btn-sm" onclick="document.getElementById('add-pf').click()">Upload .jpg / .png</button>
+          <input type="file" id="add-pf" accept=".jpg,.jpeg,.png" style="display:none" onchange="handlePhotoUpload(this,'add-photo-prev')">
+        </div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">Student ID <span class="opt-lbl">(auto if blank)</span></label><input class="form-input" id="af-id" placeholder="e.g. SID001"></div>
+        <div><label class="form-label">Full Name *</label><input class="form-input" id="af-name" placeholder="First Middle Last"></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">Date of Birth <span class="opt-lbl">(optional)</span></label><input type="date" class="form-input" id="af-dob"></div>
+        <div><label class="form-label">Gender <span class="opt-lbl">(optional)</span></label>
+          <select class="form-input" id="af-gender"><option value="">— Select —</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">Emergency Contact <span class="opt-lbl">(optional)</span></label><input class="form-input" id="af-contact" placeholder="Parent/Guardian phone"></div>
+        <div><label class="form-label">Parent Email <span class="opt-lbl">(for report dispatch)</span></label><input type="email" class="form-input" id="af-email" placeholder="parent@email.com"></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">WhatsApp Number <span class="opt-lbl">(international format)</span></label><input class="form-input" id="af-wa" placeholder="e.g. 233244123456"></div>
+        <div><label class="form-label">Residential Status <span class="opt-lbl">(optional)</span></label>
+          <select class="form-input" id="af-res"><option value="">— Select —</option><option>Day</option><option>Boarder</option></select></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">House <span class="opt-lbl">(optional)</span></label>
+          <select class="form-input" id="af-house"><option value="">— Select —</option>${houses}</select></div>
+        <div><label class="form-label">Prefect / Role <span class="opt-lbl">(optional)</span></label>
+          <select class="form-input" id="af-role">${roles.map(r=>`<option value="${r}">${r||'— None —'}</option>`).join('')}</select></div>
+      </div>
+      <div class="fg">
+        <label class="form-label">Notes <span class="opt-lbl">(medical, special needs, etc. — optional)</span></label>
+        <textarea class="form-input" id="af-notes" placeholder="Any relevant background…" rows="2"></textarea>
+      </div>
+    </div>
+    <div id="add-grades" style="display:none">
+      <div class="info-banner">📝 All grade fields are optional here. You can bulk-import grades later from <b>Import from School Portal</b>.</div>
+      ${buildGradeInputsHTML('afg')}
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewStudent()">Add Student</button>
+    </div>
+  `);
+}
+
+function buildGradeInputsHTML(prefix){
+  const cfg=DB.config||{};const core=cfg.subjects||[];const elec=cfg.electiveSubjects||[];
+  if(!core.length&&!elec.length)return'<p style="color:var(--muted);font-size:13px">No subjects configured. Set up subjects in Settings first.</p>';
+  const buildTable=(subs,label)=>{
+    if(!subs.length)return'';
+    const rows=subs.map(s=>{const k=prefix+s.replace(/[^a-z0-9]/gi,'_');return`<tr style="border-bottom:1px solid #F3F4F6"><td style="padding:7px 10px;font-size:13px;font-weight:600;color:var(--navy)">${esc(s)}</td><td style="padding:7px 10px;text-align:center"><input type="number" min="0" max="70" class="score-input" id="${k}_sba" placeholder="—"></td><td style="padding:7px 10px;text-align:center"><input type="number" min="0" max="80" class="score-input" id="${k}_exam" placeholder="—"></td></tr>`;}).join('');
+    return`<div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">${label}</div><table style="width:100%;border-collapse:collapse;margin-bottom:14px"><thead><tr style="background:var(--light)"><th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:700">Subject</th><th style="padding:7px 10px;font-size:11px;color:var(--muted);font-weight:700;text-align:center">SBA (/70)</th><th style="padding:7px 10px;font-size:11px;color:var(--muted);font-weight:700;text-align:center">Exam (/80)</th></tr></thead><tbody>${rows}</tbody></table>`;
+  };
+  return buildTable(core,'Core Subjects')+buildTable(elec,'Elective Subjects');
+}
+
+function collectGradeInputs(prefix){
+  const grades={};
+  allSubjects().forEach(s=>{const k=prefix+s.replace(/[^a-z0-9]/gi,'_');const sE=document.getElementById(k+'_sba');const eE=document.getElementById(k+'_exam');if(sE||eE)grades[s]={sba:parseFloat(sE?.value)||0,exam:parseFloat(eE?.value)||0};});
+  return grades;
+}
+
+function handlePhotoUpload(inp,prevId){
+  const f=inp.files[0];if(!f)return;
+  if(f.size>5*1024*1024){showToast('⚠️ Photo too large. Use under 5MB.',3500);return;}
+  const r=new FileReader();r.onload=e=>{_editPhoto=e.target.result;const el=document.getElementById(prevId);if(el)el.innerHTML=`<img src="${e.target.result}" class="avatar" style="width:60px;height:60px">`;};r.readAsDataURL(f);
+}
+
+function saveNewStudent(){
+  const name=(document.getElementById('af-name')?.value||'').trim();if(!name){alert('Full Name is required.');return;}
+  const rawId=(document.getElementById('af-id')?.value||'').trim();
+  const id=rawId||'SID'+String(DB.students.length+1).padStart(3,'0');
+  if(DB.students.find(s=>s.id===id)){alert(`Student ID "${id}" already exists.`);return;}
+  DB.students.push({id,name,dob:document.getElementById('af-dob')?.value||'',gender:document.getElementById('af-gender')?.value||'',contact:document.getElementById('af-contact')?.value.trim()||'',email:document.getElementById('af-email')?.value.trim()||'',whatsapp:document.getElementById('af-wa')?.value.trim()||'',residential:document.getElementById('af-res')?.value||'',house:document.getElementById('af-house')?.value||'',role:document.getElementById('af-role')?.value||'',notes:document.getElementById('af-notes')?.value.trim()||'',photo:_editPhoto||null,attendance:{},grades:collectGradeInputs('afg')});
+  _editPhoto=null;saveDB();updateAlertBanner();closeModal();renderRoster();showToast(`✅ ${name} added to roster`);
+}
+
+// EDIT STUDENT
+function openEditStudent(id){
+  const s=DB.students.find(st=>st.id===id);if(!s)return;
+  _editPhoto=null;
+  const cfg=DB.config||{};
+  const houses=(cfg.houses||[]).map(h=>`<option value="${esc(h)}"${h===s.house?' selected':''}>${esc(h)}</option>`).join('');
+  const roles=['','Class Prefect','Assistant Class Prefect','House Captain','Dining Hall Prefect','Sports Prefect','Library Prefect','Sanitation Prefect','Other Prefect'];
+  showModal('Edit Student Biodata','modal-lg',`
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab(this,'ed-bio')">📋 Biodata</button>
+      <button class="tab-btn" onclick="switchTab(this,'ed-grades')">📚 Grades</button>
+    </div>
+    <div id="ed-bio">
+      <div class="photo-upload-box">
+        <div id="edit-pp">${avatarHTML(s,60)}</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px">Passport Photo <span style="font-size:11px;color:var(--muted)">(optional)</span></div>
+          <button class="btn btn-navy btn-sm" onclick="document.getElementById('edit-pf').click()">Change Photo</button>
+          <input type="file" id="edit-pf" accept=".jpg,.jpeg,.png" style="display:none" onchange="handlePhotoUpload(this,'edit-pp')">
+        </div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">Student ID</label><input class="form-input" id="ef-id" value="${esc(s.id)}" readonly style="background:#F9FAFB;color:var(--muted)"></div>
+        <div><label class="form-label">Full Name *</label><input class="form-input" id="ef-name" value="${esc(s.name)}"></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">Date of Birth <span class="opt-lbl">(optional)</span></label><input type="date" class="form-input" id="ef-dob" value="${s.dob||''}"></div>
+        <div><label class="form-label">Gender <span class="opt-lbl">(optional)</span></label>
+          <select class="form-input" id="ef-gender"><option value="">— Select —</option>${['Male','Female','Other'].map(g=>`<option${g===s.gender?' selected':''}>${g}</option>`).join('')}</select></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">Emergency Contact <span class="opt-lbl">(optional)</span></label><input class="form-input" id="ef-contact" value="${esc(s.contact||'')}"></div>
+        <div><label class="form-label">Parent Email <span class="opt-lbl">(optional)</span></label><input type="email" class="form-input" id="ef-email" value="${esc(s.email||'')}"></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">WhatsApp Number <span class="opt-lbl">(int'l format)</span></label><input class="form-input" id="ef-wa" value="${esc(s.whatsapp||'')}" placeholder="233244123456"></div>
+        <div><label class="form-label">Residential <span class="opt-lbl">(optional)</span></label>
+          <select class="form-input" id="ef-res"><option value="">— Select —</option>${['Day','Boarder'].map(r=>`<option${r===s.residential?' selected':''}>${r}</option>`).join('')}</select></div>
+      </div>
+      <div class="fg2">
+        <div><label class="form-label">House <span class="opt-lbl">(optional)</span></label>
+          <select class="form-input" id="ef-house"><option value="">— Select —</option>${houses}</select></div>
+        <div><label class="form-label">Prefect / Role <span class="opt-lbl">(optional)</span></label>
+          <select class="form-input" id="ef-role">${roles.map(r=>`<option value="${r}"${r===s.role?' selected':''}>${r||'— None —'}</option>`).join('')}</select></div>
+      </div>
+      <div class="fg"><label class="form-label">Notes <span class="opt-lbl">(optional)</span></label><textarea class="form-input" id="ef-notes" rows="2">${esc(s.notes||'')}</textarea></div>
+    </div>
+    <div id="ed-grades" style="display:none">${buildEditGradeHTML(s)}</div>
+    <div class="form-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditStudent('${id}')">Save Changes</button>
+    </div>
+  `);
+}
+
+function buildEditGradeHTML(student){
+  const cfg=DB.config||{};const core=cfg.subjects||[];const elec=cfg.electiveSubjects||[];
+  if(!core.length&&!elec.length)return'<p style="color:var(--muted);font-size:13px">No subjects configured.</p>';
+  const buildRows=(subs,label)=>{
+    if(!subs.length)return'';
+    const rows=subs.map(s=>{
+      const g=student.grades?student.grades[s]||{sba:0,exam:0}:{sba:0,exam:0};
+      const tot=calcTotal(g.sba,g.exam),gl=gradeLabel(tot),gc=gradeColor(gl);
+      const k=s.replace(/[^a-z0-9]/gi,'_');
+      return`<tr style="border-bottom:1px solid #F3F4F6"><td style="padding:7px 10px;font-weight:600;color:var(--navy);font-size:12px">${esc(s)}</td><td style="padding:7px 10px;text-align:center"><input type="number" min="0" max="70" class="score-input" id="eg_${k}_sba" value="${g.sba||0}" onchange="liveGrade('${student.id}','${s.replace(/'/g,"\\'")}',this.value,null)"></td><td style="padding:7px 10px;text-align:center"><input type="number" min="0" max="80" class="score-input" id="eg_${k}_exam" value="${g.exam||0}" onchange="liveGrade('${student.id}','${s.replace(/'/g,"\\'")}',null,this.value)"></td><td style="padding:7px 10px;text-align:center;font-weight:700;font-size:12px" id="eg_${k}_tot">${tot}</td><td style="padding:7px 10px;text-align:center"><span class="badge" style="background:${gc}22;color:${gc};font-size:11px" id="eg_${k}_gl">${gl}</span></td></tr>`;
+    }).join('');
+    return`<div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">${label}</div><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--navy);color:#fff"><th style="padding:8px 10px;text-align:left;font-size:10px">Subject</th><th style="padding:8px 10px;font-size:10px;text-align:center">SBA (/70)</th><th style="padding:8px 10px;font-size:10px;text-align:center">Exam (/80)</th><th style="padding:8px 10px;font-size:10px;text-align:center">Total</th><th style="padding:8px 10px;font-size:10px;text-align:center">Grade</th></tr></thead><tbody>${rows}</tbody></table>`;
+  };
+  return buildRows(core,'Core Subjects')+buildRows(elec,'Elective Subjects');
+}
+
+function liveGrade(studentId,subj,newSba,newExam){
+  const s=DB.students.find(st=>st.id===studentId);if(!s)return;
+  if(!s.grades)s.grades={};if(!s.grades[subj])s.grades[subj]={sba:0,exam:0};
+  if(newSba!==null)s.grades[subj].sba=Math.min(70,Math.max(0,parseFloat(newSba)||0));
+  if(newExam!==null)s.grades[subj].exam=Math.min(80,Math.max(0,parseFloat(newExam)||0));
+  const tot=calcTotal(s.grades[subj].sba,s.grades[subj].exam),gl=gradeLabel(tot),gc=gradeColor(gl),k=subj.replace(/[^a-z0-9]/gi,'_');
+  const te=document.getElementById('eg_'+k+'_tot');const ge=document.getElementById('eg_'+k+'_gl');
+  if(te)te.textContent=tot;if(ge){ge.textContent=gl;ge.style.background=gc+'22';ge.style.color=gc;}
+  saveDB();
+}
+
+function saveEditStudent(id){
+  const s=DB.students.find(st=>st.id===id);if(!s)return;
+  const name=(document.getElementById('ef-name')?.value||'').trim();if(!name){alert('Full Name is required.');return;}
+  s.name=name;s.dob=document.getElementById('ef-dob')?.value||s.dob;s.gender=document.getElementById('ef-gender')?.value||s.gender;
+  s.contact=document.getElementById('ef-contact')?.value.trim()||s.contact;s.email=document.getElementById('ef-email')?.value.trim()||s.email;
+  s.whatsapp=document.getElementById('ef-wa')?.value.trim()||s.whatsapp;s.residential=document.getElementById('ef-res')?.value||s.residential;
+  s.house=document.getElementById('ef-house')?.value||s.house;s.role=document.getElementById('ef-role')?.value||s.role;
+  s.notes=document.getElementById('ef-notes')?.value.trim()||s.notes;
+  if(_editPhoto)s.photo=_editPhoto;_editPhoto=null;
+  saveDB();updateAlertBanner();closeModal();renderRoster();showToast(`✅ ${s.name} updated`);
+}
+
+function confirmDelete(id){
+  const s=DB.students.find(st=>st.id===id);if(!s)return;
+  showModal('Remove Student?','modal-sm',`<div style="text-align:center;padding:8px 0"><div style="font-size:42px;margin-bottom:10px">🗑️</div><p style="font-size:14px;color:var(--muted);margin-bottom:18px">Permanently delete <b>${esc(s.name)}</b>'s entire record — attendance, grades, and biodata?</p><div class="form-footer" style="justify-content:center"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-danger" onclick="doDelete('${id}')">Yes, Remove</button></div></div>`);
+}
+function doDelete(id){DB.students=DB.students.filter(s=>s.id!==id);saveDB();updateAlertBanner();closeModal();renderRoster();showToast('🗑 Student removed');}
+
+// PROFILE VIEW
+function viewProfile(id){
+  const s=DB.students.find(st=>st.id===id);if(!s)return;
+  const att=calcAttPct(s.attendance),avg=calcAvgGrade(s.grades),ac=attColor(att);
+  const attStats=Object.values(s.attendance||{}).reduce((a,v)=>{a[v]=(a[v]||0)+1;return a;},{});
+  const subs=allSubjects();
+  const subRows=subs.map(sub=>{const g=s.grades?s.grades[sub]||{sba:0,exam:0}:{sba:0,exam:0};const tot=calcTotal(g.sba,g.exam),gl=gradeLabel(tot),gc=gradeColor(gl);return`<tr style="border-bottom:1px solid #F3F4F6"><td style="padding:6px 11px;font-weight:600;color:var(--navy);font-size:12px">${esc(sub)}</td><td style="padding:6px 11px;text-align:center;font-size:12px">${g.sba||0}</td><td style="padding:6px 11px;text-align:center;font-size:12px">${g.exam||0}</td><td style="padding:6px 11px;text-align:center;font-weight:700;font-size:12px">${tot}</td><td style="padding:6px 11px;text-align:center"><span class="badge" style="background:${gc}22;color:${gc};font-size:11px">${gl}</span></td></tr>`;}).join('');
+  const fields=[['ID',s.id||'—'],['House',s.house||'—'],['Residential',s.residential||'—'],['Gender',s.gender||'—'],['DOB',s.dob||'—'],['Role',s.role||'—'],['Contact',s.contact||'—'],['Email',s.email||'—'],['WhatsApp',s.whatsapp||'—']];
+  showModal(`${s.name} — Profile`,'modal-xl',`
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;margin-bottom:4px;align-items:start">
+      <div>${avatarHTML(s,76)}</div>
+      <div>
+        <div style="font-size:18px;font-weight:800;color:var(--navy)">${esc(s.name)}</div>
+        ${s.role?`<div style="font-size:12px;color:var(--gold2);font-weight:700;margin-bottom:4px">🏅 ${esc(s.role)}</div>`:''}
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px">${fields.map(([k,v])=>`<div class="profile-info-item"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>
+        ${s.notes?`<div style="margin-top:8px;font-size:12px;color:var(--muted);background:var(--light);border-radius:8px;padding:8px 10px"><b style="color:var(--navy)">Notes: </b>${esc(s.notes)}</div>`:''}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 4px">
+      <div style="background:var(--light);border-radius:10px;padding:12px;border:2px solid ${ac}22">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semester Attendance</div>
+        <div style="font-size:30px;font-weight:800;color:${ac}">${att}%</div>
+        ${att<85?'<div style="font-size:11px;color:var(--red);font-weight:600;margin-top:3px">⚠ Parent counseling required</div>':''}
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${Object.entries(attStats).map(([k,v])=>`<span style="font-size:11px;color:${STATUS_COLORS[k]};font-weight:700">${k}: ${v}</span>`).join('')}</div>
+      </div>
+      <div style="background:var(--light);border-radius:10px;padding:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Average Performance</div>
+        <div style="font-size:30px;font-weight:800;color:var(--navy)">${avg}%</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Grade: <span style="color:${gradeColor(gradeLabel(avg))};font-weight:800">${gradeLabel(avg)}</span> · ${subs.length} subjects</div>
+      </div>
+    </div>
+    ${subs.length?`<div class="section-title">Subject Scores</div><div class="data-table-wrap"><table class="data-table" style="font-size:12px"><thead style="background:var(--navy)"><tr><th style="color:#fff">Subject</th><th style="color:#fff;text-align:center">SBA</th><th style="color:#fff;text-align:center">Exam</th><th style="color:#fff;text-align:center">Total</th><th style="color:#fff;text-align:center">Grade</th></tr></thead><tbody>${subRows}</tbody></table></div>`:''}
+    <div class="form-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn btn-navy btn-sm" onclick="closeModal();openEditStudent('${id}')">✏️ Edit</button>
+      ${s.whatsapp?`<button class="send-wa" onclick="closeModal();sendReportWhatsApp('${id}')">💬 WhatsApp</button>`:''}
+      <button class="btn btn-primary btn-sm" onclick="closeModal();openReportCard('${id}')">📄 Report Card</button>
+    </div>
+  `);
+}
+
+// ATTENDANCE
+let attDate=new Date().toISOString().split('T')[0];
+function renderAttendance(){
+  const dates=getAttDates();
+  if(!dates.includes(attDate))attDate=dates[dates.length-1]||attDate;
+  let rows='';
+  if(!DB.students.length){rows=`<tr><td colspan="4"><div class="empty-state"><div class="icon">📋</div><p>No students yet.</p></div></td></tr>`;}
+  else{
+    DB.students.forEach(s=>{
+      const status=s.attendance[attDate]||'Present';
+      const att=calcAttPct(s.attendance),ac=attColor(att);
+      const recent=dates.slice(-12);
+      const pills=['Present','Absent','Late','Excused'].map(st=>{const col=STATUS_COLORS[st],active=status===st;return`<button class="att-pill" onclick="markAtt('${s.id}','${attDate}','${st}')" style="background:${active?col:col+'18'};color:${active?'#fff':col};border-color:${col}">${STATUS_SHORT[st]}</button>`;}).join('');
+      const heat=recent.map(d=>{const st=s.attendance[d]||'—';const sc=STATUS_COLORS[st]||'#E5E7EB';return`<div class="heat-cell" style="background:${sc}" title="${d}: ${st}">${STATUS_SHORT[st]||'—'}</div>`;}).join('');
+      rows+=`<tr><td><div style="display:flex;align-items:center;gap:9px">${avatarHTML(s,32)}<div><div style="font-weight:700;color:var(--navy);font-size:13px">${esc(s.name)}</div><div style="font-size:11px;color:#9CA3AF">${esc(s.id||'')}</div></div></div></td><td><div style="display:flex;gap:5px;flex-wrap:wrap">${pills}</div></td><td style="text-align:center"><div style="display:inline-block;background:${ac}18;border:2px solid ${ac};border-radius:8px;padding:3px 10px;font-weight:800;font-size:13px;color:${ac}">${att}%</div>${att<85?'<div style="font-size:10px;color:var(--red);font-weight:600">⚠ Alert</div>':''}</td><td><div class="heatmap">${heat}</div></td></tr>`;
+    });
+  }
+  const dateOpts=dates.map(d=>`<option value="${d}"${d===attDate?' selected':''}>${fmtDate(d)}</option>`).join('');
+  const cfg=DB.config||{};
+  document.getElementById('content').innerHTML=`
+    <div class="page-header"><div><div class="page-title">Daily Attendance Log</div><div class="page-sub">${cfg.jsonbinKey?'<span style="color:var(--green);font-weight:600">☁️ Cross-device sync enabled</span>':'Enable cross-device sync in Settings.'}</div></div></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:9px 13px">
+        <label style="font-size:12px;font-weight:600;color:#374151">Date:</label>
+        <select onchange="attDate=this.value;renderAttendance()" style="border:none;font-size:13px;color:var(--navy);font-weight:600;outline:none;cursor:pointer;background:transparent">${dateOpts}</select>
+      </div>
+      <button class="btn btn-sm" style="background:#E0F2FE;color:#0369A1;border:none" onclick="bulkMark('Present')">✅ All Present</button>
+      <button class="btn btn-sm" style="background:#FEF2F2;color:var(--red);border:none" onclick="bulkMark('Absent')">❌ All Absent</button>
+      <button class="btn btn-sm" style="background:#FEF3C7;color:#92400E;border:none" onclick="bulkMark('Late')">⏰ All Late</button>
+      <button class="btn btn-navy btn-sm" onclick="openAddDate()">+ Add Date</button>
+      ${cfg.jsonbinKey?`<button class="btn btn-sm" style="background:#F0FDF4;color:var(--green);border:1px solid #BBF7D0" onclick="syncPull().then(ok=>{if(ok){updateAlertBanner();renderAttendance();showToast('☁️ Pulled latest attendance');}})">☁️ Pull Updates</button>`:''}
+    </div>
+    <div class="data-table-wrap"><table class="data-table">
+      <thead><tr><th>Student</th><th>Mark Status</th><th style="text-align:center">Semester Att.</th><th>Last 12 Days</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap">${Object.entries(STATUS_COLORS).map(([st,col])=>`<div style="display:flex;align-items:center;gap:5px;font-size:12px"><div style="width:13px;height:13px;background:${col};border-radius:3px"></div>${st} (${STATUS_SHORT[st]})</div>`).join('')}</div>`;
+}
+function getAttDates(){const s=new Set();DB.students.forEach(st=>Object.keys(st.attendance||{}).forEach(d=>s.add(d)));const arr=Array.from(s).sort();if(!arr.length)arr.push(new Date().toISOString().split('T')[0]);return arr;}
+function markAtt(sid,date,status){const s=DB.students.find(st=>st.id===sid);if(!s)return;s.attendance[date]=status;saveDB();updateAlertBanner();renderAttendance();}
+function bulkMark(status){DB.students.forEach(s=>{s.attendance[attDate]=status;});saveDB();updateAlertBanner();renderAttendance();showToast(`All students marked ${status}`);}
+function openAddDate(){
+  showModal('Add Attendance Date','modal-sm',`
+    <div class="fg"><label class="form-label">Date</label><input type="date" class="form-input" id="nad-date" value="${new Date().toISOString().split('T')[0]}"></div>
+    <div class="fg"><label class="form-label">Default Status</label><select class="form-input" id="nad-status"><option>Present</option><option>Absent</option></select></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">All students will default to the selected status. Adjust individually afterward.</p>
+    <div class="form-footer"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="confirmAddDate()">Add Date</button></div>
+  `);
+}
+function confirmAddDate(){
+  const d=document.getElementById('nad-date')?.value;const st=document.getElementById('nad-status')?.value||'Present';
+  if(!d){alert('Select a date.');return;}
+  DB.students.forEach(s=>{if(!s.attendance[d])s.attendance[d]=st;});
+  attDate=d;saveDB();closeModal();renderAttendance();showToast(`📅 ${fmtDate(d)} added`);
+}
+
+// GRADES VIEW
+let gradesId='';
+function renderGrades(){
+  if(!DB.students.length){document.getElementById('content').innerHTML=`<div class="page-title" style="margin-bottom:14px">Academic Performance Ledger</div><div class="empty-state"><div class="icon">📝</div><p>No students yet.</p></div>`;return;}
+  if(!gradesId||!DB.students.find(s=>s.id===gradesId))gradesId=DB.students[0].id;
+  const s=DB.students.find(st=>st.id===gradesId);
+  const opts=DB.students.map(st=>`<option value="${st.id}"${st.id===gradesId?' selected':''}>${esc(st.name)}</option>`).join('');
+  document.getElementById('content').innerHTML=`
+    <div class="page-header"><div><div class="page-title">Academic Performance Ledger</div><div class="page-sub">Enter or update SBA and exam scores. Changes save automatically.</div></div>
+      <button class="btn btn-outline btn-sm" onclick="navigate('import')">📥 Bulk Import</button>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <select onchange="gradesId=this.value;renderGrades()" style="padding:9px 13px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--navy);font-weight:600;outline:none;cursor:pointer">${opts}</select>
+      <div style="display:flex;align-items:center;gap:8px">${avatarHTML(s,32)}<span style="font-size:13px;color:#374151;font-weight:600">${esc(s.house||'')}${s.house?' House':''} ${esc(s.residential?'· '+s.residential:'')}</span></div>
+      <span style="font-size:12px;color:var(--green);font-weight:600;margin-left:auto">✓ Auto-saved</span>
+    </div>
+    <div class="data-table-wrap" style="padding:16px">${buildEditGradeHTML(s)}</div>`;
+}
+
+// IMPORT FROM SCHOOL PORTAL
+function renderImport(){
+  document.getElementById('content').innerHTML=`
+    <div class="page-header"><div><div class="page-title">Import from School Portal</div><div class="page-sub">Upload CSV or Excel files from your school management system.</div></div></div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab(this,'imp-stu')">👥 Student Roster</button>
+      <button class="tab-btn" onclick="switchTab(this,'imp-gr')">📝 Academic Records</button>
+      <button class="tab-btn" onclick="switchTab(this,'imp-att')">📋 Attendance Records</button>
+    </div>
+    <div id="imp-stu">
+      <div class="info-banner">📋 <strong>Expected columns (any order):</strong> <code>name</code> (required), <code>id, dob, gender, contact, email, whatsapp, residential, house, role, notes</code> — all others optional. Extra columns are ignored.</div>
+      <div class="drop-zone" onclick="document.getElementById('imp-sf').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'students')">
+        <div class="dz-icon">📁</div><div class="dz-text"><strong>Click to browse or drag & drop</strong></div><div class="dz-sub">CSV, XLS, or XLSX from SIMS, Skoolex, Campus or any school MIS</div>
+      </div>
+      <input type="file" id="imp-sf" accept=".csv,.xlsx,.xls" style="display:none" onchange="importStudents(this)">
+      <div id="imp-stu-res"></div>
+      <div class="warn-banner">💡 <strong>Tip:</strong> Export your class list from the school portal as CSV or Excel, rename columns to match above, then upload.
+        <div style="margin-top:8px"><button class="btn btn-sm btn-outline" onclick="downloadTemplate('students')">⬇️ Download Student Template</button></div>
+      </div>
+    </div>
+    <div id="imp-gr" style="display:none">
+      <div class="info-banner">📝 <strong>Long format:</strong> <code>id (or name), subject, sba, exam</code> — one row per student per subject.<br><strong>Wide format:</strong> <code>id, name, Math_sba, Math_exam, English_sba, English_exam…</code> — one row per student.</div>
+      <div class="drop-zone" onclick="document.getElementById('imp-gf').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'grades')">
+        <div class="dz-icon">📊</div><div class="dz-text"><strong>Click to browse or drag & drop grade export</strong></div><div class="dz-sub">CSV or Excel from your school's assessment or mark-entry module</div>
+      </div>
+      <input type="file" id="imp-gf" accept=".csv,.xlsx,.xls" style="display:none" onchange="importGrades(this)">
+      <div id="imp-gr-res"></div>
+      <div class="warn-banner">💡 <strong>Tip:</strong> Ask each subject teacher to export the class mark sheet from the portal, then upload here. Wide format (one row per student) works best.
+        <div style="margin-top:8px"><button class="btn btn-sm btn-outline" onclick="downloadTemplate('grades')">⬇️ Download Grades Template</button></div>
+      </div>
+    </div>
+    <div id="imp-att" style="display:none">
+      <div class="info-banner">📋 <strong>Expected columns:</strong> <code>id (or name), date (YYYY-MM-DD), status</code> — Status values: Present, Absent, Late, Excused</div>
+      <div class="drop-zone" onclick="document.getElementById('imp-af').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'attendance')">
+        <div class="dz-icon">📅</div><div class="dz-text"><strong>Click to browse or drag & drop attendance export</strong></div><div class="dz-sub">CSV or Excel from your school's attendance module</div>
+      </div>
+      <input type="file" id="imp-af" accept=".csv,.xlsx,.xls" style="display:none" onchange="importAttendance(this)">
+      <div id="imp-att-res"></div>
+      <div class="warn-banner">💡 <strong>Tip:</strong> Export the attendance register for your class from the school portal as CSV.
+        <div style="margin-top:8px"><button class="btn btn-sm btn-outline" onclick="downloadTemplate('attendance')">⬇️ Download Attendance Template</button></div>
+      </div>
+    </div>
+  `;
+}
+
+function handleDrop(e,type){e.preventDefault();e.currentTarget.classList.remove('over');const f=e.dataTransfer.files[0];if(!f)return;if(type==='students')parseStudents(f);else if(type==='grades')parseGrades(f);else if(type==='attendance')parseAttendance(f);}
+
+function readFile(file,cb){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){const r=new FileReader();r.onload=e=>cb(Papa.parse(e.target.result,{header:true,skipEmptyLines:true}).data);r.readAsText(file);}
+  else{const r=new FileReader();r.onload=e=>{const wb=XLSX.read(e.target.result,{type:'binary'});const ws=wb.Sheets[wb.SheetNames[0]];cb(XLSX.utils.sheet_to_json(ws,{defval:''}));};r.readAsBinaryString(file);}
+}
+
+function importStudents(inp){const f=inp.files[0];if(!f)return;inp.value='';parseStudents(f);}
+function parseStudents(file){
+  readFile(file,rows=>{
+    if(!rows.length){showToast('⚠️ File is empty or unreadable.',4000);return;}
+    let added=0,updated=0,skipped=0;const preview=[];
+    rows.forEach(row=>{
+      const name=(row.name||row.Name||row['Full Name']||row.fullname||row.student_name||'').trim();
+      if(!name){skipped++;return;}
+      const id=(row.id||row.ID||row['Student ID']||row.student_id||'SID'+String(DB.students.length+added+1).padStart(3,'0')).toString().trim();
+      const existing=DB.students.find(s=>s.id===id||s.name.toLowerCase()===name.toLowerCase());
+      const data={id,name,dob:row.dob||row.DOB||row['Date of Birth']||'',gender:row.gender||row.Gender||'',contact:row.contact||row.Contact||row.phone||row['Emergency Contact']||'',email:row.email||row.Email||'',whatsapp:row.whatsapp||row.WhatsApp||row.wa||'',residential:row.residential||row.Residential||row['Day/Boarder']||row.status||'',house:row.house||row.House||'',role:row.role||row.Role||'',notes:row.notes||row.Notes||''};
+      if(existing){Object.assign(existing,{...data,attendance:existing.attendance,grades:existing.grades,photo:existing.photo});updated++;}
+      else{DB.students.push({...data,photo:null,attendance:{},grades:{}});added++;}
+      preview.push({name,id,status:existing?'Updated':'Added'});
+    });
+    saveDB();updateAlertBanner();
+    const el=document.getElementById('imp-stu-res');
+    if(el)el.innerHTML=`<div style="margin-top:14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px"><div style="font-weight:700;color:#14532D;margin-bottom:8px">✅ Import complete — Added: ${added}, Updated: ${updated}, Skipped: ${skipped}</div><div style="max-height:180px;overflow-y:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#DCFCE7"><th style="padding:5px 8px;text-align:left">Name</th><th style="padding:5px 8px;text-align:left">ID</th><th style="padding:5px 8px">Status</th></tr></thead><tbody>${preview.map(p=>`<tr style="border-bottom:1px solid #F0FDF4"><td style="padding:4px 8px">${esc(p.name)}</td><td style="padding:4px 8px">${esc(p.id)}</td><td style="padding:4px 8px;color:${p.status==='Added'?'var(--green)':'var(--amber)'};font-weight:700">${p.status}</td></tr>`).join('')}</tbody></table></div><button class="btn btn-sm btn-navy" style="margin-top:10px" onclick="navigate('roster')">→ Go to Roster</button></div>`;
+    showToast(`📥 ${added} added, ${updated} updated`);
+  });
+}
+
+function importGrades(inp){const f=inp.files[0];if(!f)return;inp.value='';parseGrades(f);}
+function parseGrades(file){
+  readFile(file,rows=>{
+    if(!rows.length){showToast('⚠️ File is empty.',4000);return;}
+    let updated=0,skipped=0;const subs=allSubjects();const keys=Object.keys(rows[0]||{});
+    const isLong=keys.some(k=>k.toLowerCase()==='subject');
+    if(isLong){
+      rows.forEach(row=>{
+        const sid=(row.id||row.ID||row.name||row.Name||'').toString().trim();
+        const subj=(row.subject||row.Subject||'').trim();
+        const s=DB.students.find(st=>st.id===sid||st.name.toLowerCase()===sid.toLowerCase());
+        if(!s||!subj){skipped++;return;}
+        if(!s.grades)s.grades={};
+        s.grades[subj]={sba:parseFloat(row.sba||row.SBA||row.ca||row.CA||0)||0,exam:parseFloat(row.exam||row.Exam||row.examination||0)||0};
+        updated++;
+      });
+    } else {
+      rows.forEach(row=>{
+        const sid=(row.id||row.ID||row.name||row.Name||'').toString().trim();
+        const s=DB.students.find(st=>st.id===sid||st.name.toLowerCase()===sid.toLowerCase());
+        if(!s){skipped++;return;}
+        if(!s.grades)s.grades={};
+        subs.forEach(sub=>{
+          const kl=sub.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8);
+          const sbaKey=Object.keys(row).find(k=>k.toLowerCase().replace(/[^a-z0-9]/g,'').includes(kl)&&(k.toLowerCase().includes('sba')||k.toLowerCase().includes('ca')||k.toLowerCase().includes('assess')));
+          const exKey=Object.keys(row).find(k=>k.toLowerCase().replace(/[^a-z0-9]/g,'').includes(kl)&&(k.toLowerCase().includes('exam')));
+          if(!s.grades[sub])s.grades[sub]={sba:0,exam:0};
+          if(sbaKey&&row[sbaKey]!==''){s.grades[sub].sba=parseFloat(row[sbaKey])||0;updated++;}
+          if(exKey&&row[exKey]!==''){s.grades[sub].exam=parseFloat(row[exKey])||0;updated++;}
+        });
+      });
+    }
+    saveDB();
+    const el=document.getElementById('imp-gr-res');
+    if(el)el.innerHTML=`<div style="margin-top:14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px"><div style="font-weight:700;color:#14532D">✅ Grades imported — ${updated} records updated, ${skipped} skipped</div><button class="btn btn-sm btn-navy" style="margin-top:10px" onclick="navigate('grades')">→ View Grades</button></div>`;
+    showToast(`📥 Grades imported: ${updated} records`);
+  });
+}
+
+function importAttendance(inp){const f=inp.files[0];if(!f)return;inp.value='';parseAttendance(f);}
+function parseAttendance(file){
+  readFile(file,rows=>{
+    if(!rows.length){showToast('⚠️ File is empty.',4000);return;}
+    let updated=0,skipped=0;
+    rows.forEach(row=>{
+      const sid=(row.id||row.ID||row.name||row.Name||'').toString().trim();
+      const date=(row.date||row.Date||'').toString().trim();
+      const rawSt=(row.status||row.Status||row.attendance||row.Attendance||'Present').toString().trim();
+      const s=DB.students.find(st=>st.id===sid||st.name.toLowerCase()===sid.toLowerCase());
+      if(!s||!date){skipped++;return;}
+      const validSt=['Present','Absent','Late','Excused'].find(x=>x.toLowerCase()===rawSt.toLowerCase())||'Present';
+      s.attendance[date]=validSt;updated++;
+    });
+    saveDB();updateAlertBanner();
+    const el=document.getElementById('imp-att-res');
+    if(el)el.innerHTML=`<div style="margin-top:14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px"><div style="font-weight:700;color:#14532D">✅ Attendance imported — ${updated} records updated, ${skipped} skipped</div><button class="btn btn-sm btn-navy" style="margin-top:10px" onclick="navigate('attendance')">→ View Attendance</button></div>`;
+    showToast(`📥 Attendance: ${updated} records imported`);
+  });
+}
+
+function downloadTemplate(type){
+  let csv='',fn='';
+  if(type==='students'){csv='id,name,dob,gender,contact,email,whatsapp,residential,house,role,notes\nSID001,Abena Mensah,2008-03-14,Female,0244123456,parent@email.com,233244123456,Boarder,Doe,Class Prefect,\nSID002,Kwame Asante,2007-11-22,Male,0201987654,,,Day,Fiagbe,,';fn='Student_Template.csv';}
+  else if(type==='grades'){const subs=allSubjects();const head='id,name,'+subs.map(s=>`${s}_sba,${s}_exam`).join(',');const ex='SID001,Abena Mensah,'+subs.map(()=>'55,60').join(',');csv=head+'\n'+ex;fn='Grades_Template.csv';}
+  else{csv='id,name,date,status\nSID001,Abena Mensah,2025-01-06,Present\nSID001,Abena Mensah,2025-01-07,Absent\nSID002,Kwame Asante,2025-01-06,Late';fn='Attendance_Template.csv';}
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='FormMasterPro_'+fn;a.click();showToast('⬇️ Template downloaded');
+}
+
+// PERFORMANCE / ANALYTICS
+let perfSubj='All';
+function renderPerformance(){
+  if(!DB.students.length){document.getElementById('content').innerHTML=`<div class="page-title" style="margin-bottom:14px">Analytics & Rankings</div><div class="empty-state"><div class="icon">📊</div><p>No students yet.</p></div>`;return;}
+  const getScore=s=>perfSubj==='All'?calcAvgGrade(s.grades):(()=>{const g=(s.grades||{})[perfSubj]||{sba:0,exam:0};return calcTotal(g.sba,g.exam);})();
+  const ranked=[...DB.students].map(s=>({...s,score:getScore(s),att:calcAttPct(s.attendance)})).sort((a,b)=>b.score-a.score).map((s,i)=>({...s,pos:i+1}));
+  const scores=DB.students.map(s=>calcAvgGrade(s.grades));
+  const maxS=scores.length?Math.max(...scores):0,minS=scores.length?Math.min(...scores):0;
+  const avgS=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+  const top=DB.students.find(s=>calcAvgGrade(s.grades)===maxS);
+  const bands=[{min:80,l:'A1',col:'#22C55E'},{min:70,l:'B2',col:'#4ADE80'},{min:65,l:'B3',col:'#86EFAC'},{min:60,l:'C4',col:'#EAB308'},{min:55,l:'C5',col:'#F59E0B'},{min:50,l:'C6',col:'#FB923C'},{min:45,l:'D7',col:'#F87171'},{min:40,l:'E8',col:'#EF4444'},{min:0,l:'F9',col:'#DC2626'}];
+  const maxArr=[80,70,65,60,55,50,45,40,0];
+  const cnts=bands.map((b,i)=>({...b,count:scores.filter(sc=>sc>=b.min&&(i===0?true:sc<maxArr[i-1])).length}));
+  const cmax=Math.max(...cnts.map(b=>b.count),1);
+  const bars=cnts.map(b=>`<div class="bar-col"><div class="bar-count">${b.count||''}</div><div class="bar-fill" style="background:${b.col};height:${Math.max((b.count/cmax)*80,b.count?5:2)}px"></div><div class="bar-lbl" style="color:${b.col}">${b.l}</div></div>`).join('');
+  const subjBtns=['All',...allSubjects()].map(s=>`<button onclick="perfSubj='${esc(s)}';renderPerformance()" class="btn btn-xs" style="background:${perfSubj===s?'var(--navy)':'#F3F4F6'};color:${perfSubj===s?'#fff':'#374151'};border:none;margin:2px">${s==='All'?'All Subjects':s.split(' ').slice(0,2).join(' ')}</button>`).join('');
+  const rankRows=ranked.map((s,i)=>{const gl=gradeLabel(s.score),gc=gradeColor(gl),ac=attColor(s.att),hc=houseColor(s.house);return`<tr><td style="padding:9px 13px"><div style="width:28px;height:28px;border-radius:50%;background:${i<3?['#D4A843','#9CA3AF','#CD7C3A'][i]:'#F3F4F6'};color:${i<3?'#fff':'#374151'};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">${s.pos}</div></td><td style="padding:9px 13px"><div style="display:flex;align-items:center;gap:9px">${avatarHTML(s,30)}<span style="font-weight:700;color:var(--navy);font-size:13px">${esc(s.name)}</span></div></td><td style="padding:9px 13px">${s.house?`<span class="badge" style="background:${hc[0]};color:${hc[1]}">${esc(s.house)}</span>`:'—'}</td><td style="padding:9px 13px"><div style="display:flex;align-items:center;gap:7px"><div style="width:65px;height:7px;background:#F3F4F6;border-radius:4px;overflow:hidden"><div style="width:${s.score}%;height:100%;background:${gc};border-radius:4px"></div></div><span style="font-size:13px;font-weight:700;color:var(--navy)">${s.score}%</span></div></td><td style="padding:9px 13px"><span class="badge" style="background:${gc}22;color:${gc}">${gl}</span></td><td style="padding:9px 13px"><span style="color:${ac};font-weight:700;font-size:13px">${s.att}%${s.att<85?' ⚠️':''}</span></td></tr>`;}).join('');
+  document.getElementById('content').innerHTML=`
+    <div class="page-header"><div><div class="page-title">Analytics & Rankings</div><div class="page-sub">Class performance overview and rankings.</div></div>
+      <button class="btn btn-primary btn-sm" onclick="navigate('reports')">📤 Generate Reports</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="val" style="color:var(--navy)">${avgS}%</div><div class="lbl">Class Average</div><div class="sub">${gradeLabel(avgS)}</div></div>
+      <div class="stat-card"><div class="val" style="color:var(--green)">${maxS}%</div><div class="lbl">Highest Score</div><div class="sub">${esc(top?.name?.split(' ')[0]||'—')}</div></div>
+      <div class="stat-card"><div class="val" style="color:var(--red)">${minS}%</div><div class="lbl">Lowest Score</div><div class="sub">${gradeLabel(minS)}</div></div>
+      <div class="stat-card"><div class="val" style="color:var(--gold2)">${scores.filter(s=>s>=80).length}</div><div class="lbl">Distinctions (A1)</div><div class="sub">≥80%</div></div>
+    </div>
+    <div style="background:#fff;border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:16px"><div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">Grade Distribution</div><div class="bar-chart">${bars}</div></div>
+    <div style="display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap">${subjBtns}</div>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Pos</th><th>Student</th><th>House</th><th>Score</th><th>Grade</th><th>Att. Rate</th></tr></thead><tbody>${rankRows}</tbody></table></div>`;
+}
+
+// REPORT CARDS & DISPATCH
+function renderReports(){
+  if(!DB.students.length){document.getElementById('content').innerHTML=`<div class="page-title" style="margin-bottom:14px">Report Cards & Dispatch</div><div class="empty-state"><div class="icon">📤</div><p>No students yet.</p></div>`;return;}
+  const allAvgs=[...DB.students].map(s=>({id:s.id,avg:calcAvgGrade(s.grades)})).sort((a,b)=>b.avg-a.avg);
+  const posMap={};allAvgs.forEach((s,i)=>posMap[s.id]=i+1);
+  const rows=DB.students.map(s=>{
+    const att=calcAttPct(s.attendance),avg=calcAvgGrade(s.grades),gl=gradeLabel(avg),gc=gradeColor(gl),ac=attColor(att),pos=posMap[s.id];
+    const hasWa=!!(s.whatsapp&&s.whatsapp.trim()),hasEmail=!!(s.email&&s.email.trim());
+    return`<tr><td style="padding:9px 13px"><div style="display:flex;align-items:center;gap:9px">${avatarHTML(s,32)}<div><div style="font-weight:700;color:var(--navy);font-size:13px">${esc(s.name)}</div><div style="font-size:11px;color:#9CA3AF">${esc(s.id||'')}</div></div></div></td>
+      <td style="padding:9px 13px;text-align:center"><span class="badge" style="background:#F3F4F6;color:var(--navy)">${posOrd(pos)}</span></td>
+      <td style="padding:9px 13px"><span class="badge" style="background:${gc}22;color:${gc}">${avg}% · ${gl}</span></td>
+      <td style="padding:9px 13px;text-align:center"><span style="color:${ac};font-weight:700">${att}%</span></td>
+      <td style="padding:9px 13px"><div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-xs btn-navy" onclick="openReportCard('${s.id}')">📄 Preview</button>
+        ${hasWa?`<button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="sendReportWhatsApp('${s.id}')">💬 WhatsApp</button>`:`<span style="font-size:11px;color:#9CA3AF" title="No WhatsApp on file">💬 —</span>`}
+        ${hasEmail?`<button class="btn btn-xs" style="background:#4285F4;color:#fff;border:none" onclick="sendReportEmail('${s.id}')">📧 Email</button>`:`<span style="font-size:11px;color:#9CA3AF" title="No email on file">📧 —</span>`}
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('content').innerHTML=`
+    <div class="page-header"><div><div class="page-title">Report Cards & Dispatch</div><div class="page-sub">Preview, print, and send end-of-semester reports to parents.</div></div>
+      <button class="btn btn-sm btn-outline" onclick="bulkSendAll()">💬 Bulk Send (WhatsApp)</button>
+    </div>
+    <div class="info-banner">💬 <strong>WhatsApp</strong> opens a pre-filled message in WhatsApp Web/App for each parent. 📧 <strong>Email</strong> opens your mail client. Add parent contacts via Edit Student (✏️ icon).</div>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Student</th><th style="text-align:center">Position</th><th>Performance</th><th style="text-align:center">Attendance</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function sendReportWhatsApp(id){
+  const s=DB.students.find(st=>st.id===id);if(!s)return;
+  const cfg=DB.config||{};
+  const avg=calcAvgGrade(s.grades),gl=gradeLabel(avg),att=calcAttPct(s.attendance);
+  const allAvgs=[...DB.students].map(st=>calcAvgGrade(st.grades)).sort((a,b)=>b-a);
+  const pos=allAvgs.indexOf(avg)+1;
+  const wa=(s.whatsapp||'').replace(/[^0-9]/g,'');
+  if(!wa){showToast('⚠️ No WhatsApp number for this student. Add it in Edit Student.',4000);return;}
+  const subLines=allSubjects().map(sub=>{const g=(s.grades||{})[sub]||{sba:0,exam:0};const tot=calcTotal(g.sba,g.exam);return`• ${sub}: ${tot}% (${gradeLabel(tot)})`;}).join('\n');
+  const msg=`🎓 *${cfg.school||'School'} — End of Semester Report*\n\n`+
+    `Dear Parent/Guardian of *${s.name}*,\n\n`+
+    `Below is a summary of ${s.name}'s performance for *${cfg.semester||'this semester'}, ${cfg.year||''}*:\n\n`+
+    `📚 *Average Score:* ${avg}% (${gl})\n`+
+    `🏆 *Class Position:* ${posOrd(pos)} of ${DB.students.length}\n`+
+    `📋 *Attendance:* ${att}%${att<85?' ⚠️ Below recommended 85%':' ✅'}\n\n`+
+    `*Subject Scores:*\n${subLines}\n\n`+
+    `For the full printed report, please contact the school.\n\n`+
+    `— *${cfg.teacherName||'Form Master'}*, ${cfg.className||''} Form Master`;
+  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`,'_blank');
+  showToast(`💬 WhatsApp opened for ${s.name}`);
+}
+
+function sendReportEmail(id){
+  const s=DB.students.find(st=>st.id===id);if(!s)return;
+  const cfg=DB.config||{};if(!s.email){showToast('⚠️ No email on file.',3500);return;}
+  const avg=calcAvgGrade(s.grades),gl=gradeLabel(avg),att=calcAttPct(s.attendance);
+  const allAvgs=[...DB.students].map(st=>calcAvgGrade(st.grades)).sort((a,b)=>b-a);
+  const pos=allAvgs.indexOf(avg)+1;
+  const subLines=allSubjects().map(sub=>{const g=(s.grades||{})[sub]||{sba:0,exam:0};const tot=calcTotal(g.sba,g.exam);return`${sub}: ${tot}% (${gradeLabel(tot)})`;}).join('\n');
+  const subj=`End of Semester Report — ${s.name} — ${cfg.semester||''} ${cfg.year||''}`;
+  const body=`Dear Parent/Guardian of ${s.name},\n\nBelow is a summary of ${s.name}'s academic performance for ${cfg.semester||'this semester'}, ${cfg.year||''}.\n\nAverage Score: ${avg}% (${gl})\nClass Position: ${posOrd(pos)} of ${DB.students.length}\nAttendance: ${att}%${att<85?' (Below recommended 85%)':''}\n\nSubject Scores:\n${subLines}\n\nFor the full printed report, contact the school.\n\nRegards,\n${cfg.teacherName||'Form Master'}\n${cfg.className||''} Form Master\n${cfg.school||''}`;
+  window.location.href=`mailto:${s.email}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+  showToast(`📧 Email client opened for ${s.name}`);
+}
+
+function bulkSendAll(){
+  const withWa=DB.students.filter(s=>s.whatsapp&&s.whatsapp.trim());
+  if(!withWa.length){showToast('⚠️ No students have WhatsApp numbers. Add them via Edit Student.',4500);return;}
+  showModal('Bulk WhatsApp Dispatch','modal-sm',`<div style="text-align:center;padding:6px 0"><div style="font-size:38px;margin-bottom:10px">💬</div><p style="font-size:14px;color:var(--muted);margin-bottom:6px">${withWa.length} of ${DB.students.length} students have WhatsApp numbers.</p><p style="font-size:12px;color:var(--muted);margin-bottom:18px">Each report will open in a new tab. Allow pop-ups in your browser for this to work.</p><div class="form-footer" style="justify-content:center"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn" style="background:#25D366;color:#fff;border:none" onclick="doBulkSend()">Send to All ${withWa.length} Parents</button></div></div>`);
+}
+function doBulkSend(){const wa=DB.students.filter(s=>s.whatsapp&&s.whatsapp.trim());closeModal();wa.forEach((s,i)=>setTimeout(()=>sendReportWhatsApp(s.id),i*900));showToast(`💬 Opening WhatsApp for ${wa.length} parents…`,4000);}
+
+// REPORT CARD PREVIEW
+function openReportCard(id){
+  const s=DB.students.find(st=>st.id===id);if(!s)return;
+  const cfg=DB.config||{};
+  const att=calcAttPct(s.attendance),avg=calcAvgGrade(s.grades);
+  const allAvgs=[...DB.students].map(st=>calcAvgGrade(st.grades)).sort((a,b)=>b-a);
+  const pos=allAvgs.indexOf(avg)+1;
+  const attStats=Object.values(s.attendance||{}).reduce((a,v)=>{a[v]=(a[v]||0)+1;return a;},{});
+  const subs=allSubjects();
+  const subRows=subs.map(sub=>{const g=(s.grades||{})[sub]||{sba:0,exam:0};const tot=calcTotal(g.sba,g.exam),gl=gradeLabel(tot),gc=gradeColor(gl);const rem=tot>=70?'Excellent':tot>=55?'Satisfactory':'Needs Improvement';return`<tr style="border-bottom:1px solid #F3F4F6"><td style="padding:5px 9px;font-weight:600;color:#1A2744;font-size:11px">${esc(sub)}</td><td style="padding:5px 9px;text-align:center;font-size:11px">${g.sba||0}</td><td style="padding:5px 9px;text-align:center;font-size:11px">${g.exam||0}</td><td style="padding:5px 9px;text-align:center;font-weight:700;font-size:11px">${tot}</td><td style="padding:5px 9px;text-align:center"><span style="background:${gc}22;color:${gc};font-weight:700;padding:1px 7px;border-radius:4px;font-size:10px">${gl}</span></td><td style="padding:5px 9px;color:#6B7280;font-size:10px">${rem}</td></tr>`;}).join('');
+  const logoHtml=cfg.logo?`<img src="${cfg.logo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px">`:`<div style="width:50px;height:50px;background:#D4A843;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px">🎓</div>`;
+  const photoHtml=s.photo?`<img src="${s.photo}" style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:2px solid #D4A843">`:`<div style="width:68px;height:68px;border-radius:50%;background:${AVATAR_COLORS[(s.name||'A').charCodeAt(0)%AVATAR_COLORS.length]};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;border:2px solid #D4A843">${(s.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>`;
+  const ac=attColor(att);
+  showModal('Terminal Report Card Preview','modal-xl',`
+    <div id="rc-inner" style="font-family:'Times New Roman',Georgia,serif;border:3px double #1A2744">
+      <div style="background:#1A2744;color:#fff;padding:13px 18px;display:flex;align-items:center;gap:12px">
+        ${logoHtml}
+        <div style="flex:1;text-align:center">
+          <div style="color:#D4A843;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-family:sans-serif">${esc(cfg.school||'Senior High School')}</div>
+          <div style="font-size:18px;font-weight:800;letter-spacing:.02em">TERMINAL REPORT CARD</div>
+          <div style="font-size:10px;color:#94A3B8;font-family:sans-serif">${esc(cfg.className||'')} · ${esc(cfg.year||'')} · ${esc(cfg.semester||'')}</div>
+        </div>
+        ${logoHtml}
+      </div>
+      <div style="padding:11px 16px">
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:11px;padding-bottom:11px;border-bottom:1px solid #E5E7EB">
+          ${photoHtml}
+          <div style="flex:1">
+            <div style="font-size:16px;font-weight:800;color:#1A2744">${esc(s.name)}</div>
+            ${s.role?`<div style="font-size:10px;color:#D4A843;font-weight:700;margin-bottom:3px;font-family:sans-serif">🏅 ${esc(s.role)}</div>`:''}
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px;font-family:sans-serif">
+              ${[['Student ID',s.id||'—'],['House',s.house||'—'],['Residential',s.residential||'—'],['Gender',s.gender||'—'],['DOB',s.dob||'—'],['Programme',cfg.stream||'—']].map(([k,v])=>`<div style="font-size:10px"><span style="color:#6B7280">${k}: </span><span style="font-weight:700;color:#1A2744">${esc(v)}</span></div>`).join('')}
+            </div>
+          </div>
+          <div style="text-align:center;background:#F8F9FC;border-radius:9px;padding:9px 14px;border:2px solid #D4A843;font-family:sans-serif;flex-shrink:0">
+            <div style="font-size:22px;font-weight:800;color:#1A2744">${posOrd(pos)}</div>
+            <div style="font-size:9px;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Class Position</div>
+            <div style="font-size:9px;color:#6B7280">of ${DB.students.length}</div>
+          </div>
+        </div>
+        ${subs.length?`<div style="font-size:10px;font-weight:700;color:#1A2744;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-family:sans-serif">Academic Performance</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+          <thead><tr style="background:#1A2744;color:#fff"><th style="padding:5px 9px;text-align:left;font-size:9px;font-family:sans-serif">Subject</th><th style="padding:5px 9px;font-size:9px;text-align:center;font-family:sans-serif">SBA(70)</th><th style="padding:5px 9px;font-size:9px;text-align:center;font-family:sans-serif">Exam(80)</th><th style="padding:5px 9px;font-size:9px;text-align:center;font-family:sans-serif">Total</th><th style="padding:5px 9px;font-size:9px;text-align:center;font-family:sans-serif">Grade</th><th style="padding:5px 9px;text-align:left;font-size:9px;font-family:sans-serif">Remarks</th></tr></thead>
+          <tbody>${subRows}</tbody>
+          <tfoot><tr style="background:#1A274411"><td colspan="3" style="padding:5px 9px;font-size:11px;font-weight:700;color:#1A2744;font-family:sans-serif">Aggregate Average</td><td style="padding:5px 9px;text-align:center;font-weight:800;font-size:11px;color:#1A2744">${avg}</td><td style="padding:5px 9px;text-align:center"><span style="color:${gradeColor(gradeLabel(avg))};font-weight:800;font-size:11px">${gradeLabel(avg)}</span></td><td></td></tfoot>
+        </table>`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div style="border:1px solid #E5E7EB;border-radius:8px;padding:9px;font-family:sans-serif">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#6B7280;margin-bottom:6px">Attendance Summary</div>
+            ${Object.entries(attStats).map(([st,cnt])=>`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span style="color:${STATUS_COLORS[st]};font-weight:600">${st}</span><span style="font-weight:700">${cnt} day${cnt>1?'s':''}</span></div>`).join('')}
+            <div style="margin-top:6px;padding-top:6px;border-top:1px solid #F3F4F6;display:flex;justify-content:space-between;font-size:10px"><span style="font-weight:700">Attendance Rate</span><span style="font-weight:800;color:${ac}">${att}%${att<85?' ⚠':''}</span></div>
+          </div>
+          <div style="border:1px solid #E5E7EB;border-radius:8px;padding:9px">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#6B7280;margin-bottom:6px;font-family:sans-serif">Form Master's Remarks</div>
+            <textarea id="rc-remarks" placeholder="Enter your remarks…" style="width:100%;height:72px;border:1px solid #E5E7EB;border-radius:5px;padding:6px;font-size:11px;font-family:Georgia,serif;resize:none;outline:none;box-sizing:border-box"></textarea>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #E5E7EB;padding-top:8px;font-family:sans-serif">
+          <div style="font-size:9px;color:#9CA3AF">FormMaster Pro · Kaizen Technologies · ${new Date().toLocaleDateString()}</div>
+          <div style="font-size:9px;color:#9CA3AF">Signature: ___________________________</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-footer" style="flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      ${s.whatsapp?`<button class="send-wa" onclick="closeModal();sendReportWhatsApp('${id}')">💬 Send via WhatsApp</button>`:''}
+      ${s.email?`<button class="send-email" onclick="closeModal();sendReportEmail('${id}')">📧 Send via Email</button>`:''}
+      <button class="btn btn-primary" onclick="printRC('${id}')">🖨 Print / Save PDF</button>
+    </div>
+  `);
+}
+
+function printRC(id){
+  const inner=document.getElementById('rc-inner');if(!inner)return;
+  const remarks=document.getElementById('rc-remarks')?.value||'';
+  const w=window.open('','_blank','width=850,height=680');
+  let html=inner.outerHTML;
+  html=html.replace(/<textarea[^>]*>[\s\S]*?<\/textarea>/,`<div style="border:1px solid #E5E7EB;border-radius:5px;padding:6px;min-height:60px;font-size:11px;font-family:Georgia,serif;white-space:pre-wrap">${esc(remarks)}</div>`);
+  w.document.write(`<!DOCTYPE html><html><head><title>Report Card</title><style>body{margin:12px;font-family:'Times New Roman',serif}@media print{@page{size:A4 portrait;margin:8mm}}</style></head><body>${html}<script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script></body></html>`);
+  w.document.close();
+}
+
+// CLASS LOG
+const LOG_COLORS={Meeting:'#4F46E5',Counseling:'#D97706',Welfare:'#0891B2',Disciplinary:'#DC2626',General:'#059669'};
+function renderLog(){
+  const logs=[...DB.logs].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const entries=logs.length?logs.map(l=>{const col=LOG_COLORS[l.type]||'#6B7280';return`<div class="log-entry" style="border-left-color:${col}"><div class="log-meta"><span class="badge" style="background:${col}18;color:${col}">${esc(l.type)}</span><span style="font-size:14px;font-weight:700;color:var(--navy)">${esc(l.title)}</span><span style="font-size:12px;color:#9CA3AF;margin-left:auto">${fmtDate(l.date)}</span><button onclick="delLog('${l.id}')" style="background:#FEF2F2;color:var(--red);border:none;border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer">🗑</button></div>${l.students?`<div style="font-size:11px;color:var(--muted);margin-bottom:5px"><b>Students:</b> ${esc(l.students)}</div>`:''} ${l.agenda?`<div style="font-size:13px;color:#374151;margin-bottom:5px"><span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Agenda: </span>${esc(l.agenda)}</div>`:''} ${l.decisions?`<div class="log-decision"><span style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase">Decisions: </span>${esc(l.decisions)}</div>`:''}</div>`;}).join(''):`<div class="empty-state"><div class="icon">📓</div><p>No log entries yet.</p></div>`;
+  document.getElementById('content').innerHTML=`<div class="page-header"><div><div class="page-title">Class Meeting Log</div><div class="page-sub">Record meetings, counseling, welfare, and disciplinary sessions.</div></div><button class="btn btn-primary" onclick="openAddLog()">+ New Entry</button></div>${entries}`;
+}
+function openAddLog(){
+  showModal('New Log Entry','modal-md',`
+    <div class="fg2">
+      <div><label class="form-label">Date</label><input type="date" class="form-input" id="lg-date" value="${new Date().toISOString().split('T')[0]}"></div>
+      <div><label class="form-label">Type</label><select class="form-input" id="lg-type"><option>Meeting</option><option>Counseling</option><option>Welfare</option><option>Disciplinary</option><option>General</option></select></div>
+    </div>
+    <div class="fg"><label class="form-label">Title *</label><input class="form-input" id="lg-title" placeholder="Session title…"></div>
+    <div class="fg"><label class="form-label">Students Involved <span class="opt-lbl">(optional — leave blank for whole class)</span></label><input class="form-input" id="lg-students" placeholder="e.g. Kwame Asante, Abena Mensah"></div>
+    <div class="fg2">
+      <div><label class="form-label">Agenda / Notes <span class="opt-lbl">(optional)</span></label><textarea class="form-input" id="lg-agenda" placeholder="What was discussed?"></textarea></div>
+      <div><label class="form-label">Decisions / Action Items <span class="opt-lbl">(optional)</span></label><textarea class="form-input" id="lg-decisions" placeholder="What was decided?"></textarea></div>
+    </div>
+    <div class="form-footer"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveLog()">Save Entry</button></div>
+  `);
+}
+function saveLog(){const title=(document.getElementById('lg-title')?.value||'').trim();const date=document.getElementById('lg-date')?.value;if(!title||!date){alert('Title and date are required.');return;}DB.logs.push({id:'L'+Date.now().toString(36),date,type:document.getElementById('lg-type')?.value,title,agenda:(document.getElementById('lg-agenda')?.value||'').trim(),decisions:(document.getElementById('lg-decisions')?.value||'').trim(),students:(document.getElementById('lg-students')?.value||'').trim()});saveDB();closeModal();renderLog();showToast('📓 Log entry saved');}
+function delLog(id){DB.logs=DB.logs.filter(l=>l.id!==id);saveDB();renderLog();showToast('🗑 Entry removed');}
+
+// SETTINGS
+function renderSettings(){
+  const cfg=DB.config||{};
+  document.getElementById('content').innerHTML=`
+    <div class="page-header"><div><div class="page-title">Settings & Sync</div><div class="page-sub">Update class config, sync, branding, and data management.</div></div></div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab(this,'sc')">🏫 Class Config</button>
+      <button class="tab-btn" onclick="switchTab(this,'ss')">☁️ Cross-Device Sync</button>
+      <button class="tab-btn" onclick="switchTab(this,'sb')">🎨 Branding</button>
+      <button class="tab-btn" onclick="switchTab(this,'sd')">💾 Data</button>
+    </div>
+    <div id="sc">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px">
+          <div style="font-size:14px;font-weight:800;color:var(--navy);margin-bottom:12px">👤 Form Master</div>
+          <div class="fg"><label class="form-label">Full Name / Title</label><input class="form-input" id="cfg-t" value="${esc(cfg.teacherName||'')}"></div>
+          <div class="fg"><label class="form-label field-optional">Staff ID</label><input class="form-input" id="cfg-si" value="${esc(cfg.staffId||'')}"></div>
+          <div class="fg"><label class="form-label">School Name</label><input class="form-input" id="cfg-sc" value="${esc(cfg.school||'')}"></div>
+          <div class="fg2">
+            <div><label class="form-label">Year</label><input class="form-input" id="cfg-y" value="${esc(cfg.year||'')}"></div>
+            <div><label class="form-label">Semester</label><select class="form-input" id="cfg-sem">${['First Semester','Second Semester'].map(t=>`<option${t===cfg.semester?' selected':''}>${t}</option>`).join('')}</select></div>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px">
+          <div style="font-size:14px;font-weight:800;color:var(--navy);margin-bottom:12px">🏫 Class Details</div>
+          <div class="fg2">
+            <div><label class="form-label">Class / Form</label><input class="form-input" id="cfg-cl" value="${esc(cfg.className||'')}"></div>
+            <div><label class="form-label field-optional">Stream</label><input class="form-input" id="cfg-st" value="${esc(cfg.stream||'')}"></div>
+          </div>
+          <div class="fg"><label class="form-label">Houses <span class="opt-lbl">(comma-separated)</span></label><input class="form-input" id="cfg-h" value="${esc((cfg.houses||[]).join(', '))}"></div>
+          <div class="fg"><label class="form-label">Core Subjects <span class="opt-lbl">(comma-separated)</span></label><textarea class="form-input" id="cfg-cs" rows="2">${esc((cfg.subjects||[]).join(', '))}</textarea></div>
+          <div class="fg"><label class="form-label field-optional">Elective Subjects</label><textarea class="form-input" id="cfg-es" rows="2">${esc((cfg.electiveSubjects||[]).join(', '))}</textarea></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="saveSettings()">💾 Save Settings</button>
+    </div>
+    <div id="ss" style="display:none">
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:18px;max-width:560px">
+        <div style="font-size:14px;font-weight:800;color:var(--navy);margin-bottom:10px">☁️ JSONBin.io Real-Time Sync</div>
+        <div class="info-banner" style="margin-bottom:12px">📡 Create a free account at <a href="https://jsonbin.io" target="_blank" style="color:var(--blue)">jsonbin.io</a> → API Keys → copy <b>Master Key</b>. All devices using the same key and Bin ID will share live data.</div>
+        <div class="fg"><label class="form-label">Master Key</label><input class="form-input" type="password" id="cfg-jk" value="${esc(cfg.jsonbinKey||'')}" placeholder="$2b$10$…"></div>
+        <div class="fg"><label class="form-label field-optional">Bin ID <span class="opt-lbl">(auto-created on first push)</span></label><input class="form-input" id="cfg-jb" value="${esc(cfg.binId||'')}"></div>
+        ${cfg.binId?`<div style="margin-bottom:10px;font-size:12px;color:var(--muted)">Current Bin: <code style="background:#F3F4F6;padding:2px 6px;border-radius:4px">${cfg.binId}</code></div>`:''}
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-navy" onclick="saveAndPush()">💾 Save & Push</button>
+          <button class="btn btn-outline" onclick="saveAndPull()">☁️ Pull from Cloud</button>
+          <button class="btn btn-xs" style="color:var(--red);border:1px solid #FECACA;background:#FEF2F2" onclick="disconnectSync()">✕ Disconnect</button>
+        </div>
+      </div>
+    </div>
+    <div id="sb" style="display:none">
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:18px;max-width:460px">
+        <div style="font-size:14px;font-weight:800;color:var(--navy);margin-bottom:12px">🏫 School Logo / Crest</div>
+        <div class="photo-upload-box">
+          <div id="logo-prev" style="width:64px;height:64px;border-radius:10px;overflow:hidden;background:var(--light);display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">${cfg.logo?`<img src="${cfg.logo}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:28px">🎓</span>'}</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">Upload School Logo <span style="font-size:11px;color:var(--muted)">(optional)</span></div>
+            <button class="btn btn-navy btn-sm" onclick="document.getElementById('logo-inp').click()">Upload Logo</button>
+            <input type="file" id="logo-inp" accept=".jpg,.jpeg,.png,.svg,.gif" style="display:none" onchange="handleLogoUpload(this)">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Square PNG/JPG recommended</div>
+          </div>
+        </div>
+        ${cfg.logo?`<button class="btn btn-xs" style="color:var(--red);border:1px solid #FECACA;background:#FEF2F2;margin-top:4px" onclick="removeLogo()">Remove Logo</button>`:''}
+      </div>
+    </div>
+    <div id="sd" style="display:none">
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:18px;max-width:520px">
+        <div style="font-size:14px;font-weight:800;color:var(--navy);margin-bottom:14px">💾 Backup & Restore</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:10px"><span style="font-size:22px">📤</span><div style="flex:1"><div style="font-weight:700;font-size:13px">Export Full Backup</div><div style="font-size:12px;color:var(--muted)">Download all data as JSON</div></div><button class="btn btn-sm btn-outline" onclick="exportData()">Export</button></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:10px"><span style="font-size:22px">📥</span><div style="flex:1"><div style="font-weight:700;font-size:13px">Import Backup</div><div style="font-size:12px;color:var(--muted)">Restore from a previous export</div></div><button class="btn btn-sm btn-outline" onclick="document.getElementById('restore-inp').click()">Import</button><input type="file" id="restore-inp" accept=".json" style="display:none" onchange="importBackup(this)"></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #FECACA;border-radius:10px;background:#FEF2F2"><span style="font-size:22px">⚠️</span><div style="flex:1"><div style="font-weight:700;font-size:13px;color:var(--red)">Reset All Data</div><div style="font-size:12px;color:var(--muted)">Delete everything and restart setup</div></div><button class="btn btn-sm btn-danger" onclick="confirmReset()">Reset</button></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveSettings(){
+  const cfg=DB.config;
+  cfg.teacherName=document.getElementById('cfg-t')?.value.trim()||cfg.teacherName;
+  cfg.staffId=document.getElementById('cfg-si')?.value.trim();
+  cfg.school=document.getElementById('cfg-sc')?.value.trim()||cfg.school;
+  cfg.year=document.getElementById('cfg-y')?.value.trim()||cfg.year;
+  cfg.semester=document.getElementById('cfg-sem')?.value||cfg.semester;
+  cfg.className=document.getElementById('cfg-cl')?.value.trim()||cfg.className;
+  cfg.stream=document.getElementById('cfg-st')?.value.trim();
+  cfg.houses=(document.getElementById('cfg-h')?.value||'').split(',').map(h=>h.trim()).filter(Boolean);
+  cfg.subjects=(document.getElementById('cfg-cs')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  cfg.electiveSubjects=(document.getElementById('cfg-es')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  saveDB();startApp();showToast('✅ Settings saved');
+}
+function saveAndPush(){const cfg=DB.config;cfg.jsonbinKey=document.getElementById('cfg-jk')?.value.trim();cfg.binId=document.getElementById('cfg-jb')?.value.trim()||null;saveDB();syncPush();}
+function saveAndPull(){const cfg=DB.config;cfg.jsonbinKey=document.getElementById('cfg-jk')?.value.trim();cfg.binId=document.getElementById('cfg-jb')?.value.trim()||null;saveDB();syncPull().then(ok=>{if(ok){updateAlertBanner();renderSettings();showToast('☁️ Data pulled from cloud');}else showToast('⚠️ Pull failed. Check key/bin ID.',4000);});}
+function disconnectSync(){DB.config.jsonbinKey='';DB.config.binId=null;saveDB();renderSettings();showToast('🔌 Sync disconnected');}
+function handleLogoUpload(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{DB.config.logo=e.target.result;saveDB();startApp();const el=document.getElementById('logo-prev');if(el)el.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;showToast('🏫 Logo uploaded');};r.readAsDataURL(f);}
+function removeLogo(){DB.config.logo=null;saveDB();startApp();renderSettings();showToast('Logo removed');}
+function exportData(){const a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(DB,null,2));a.download=`FormMasterPro_${(DB.config?.className||'Class').replace(/\s/g,'_')}_${new Date().toISOString().slice(0,10)}.json`;a.click();showToast('📤 Backup exported');}
+function importBackup(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d.config||!Array.isArray(d.students))throw 0;DB=d;saveDB();startApp();showToast('✅ Backup restored');}catch{alert('Invalid backup file.');}};r.readAsText(f);inp.value='';}
+function confirmReset(){showModal('Reset All Data?','modal-sm',`<div style="text-align:center;padding:8px 0"><div style="font-size:40px;margin-bottom:10px">⚠️</div><p style="font-size:14px;color:var(--muted);margin-bottom:18px">This will permanently delete <b>all students, attendance, grades, and logs</b>. Export a backup first!</p><div class="form-footer" style="justify-content:center"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-danger" onclick="localStorage.removeItem('fmp_v2');location.reload()">Yes, Reset</button></div></div>`);}
+
+// MODAL & UI UTILS
+function showModal(title,sizeClass,bodyHtml){closeModal();const ov=document.createElement('div');ov.className='modal-overlay';ov.id='active-modal';ov.innerHTML=`<div class="modal-box ${sizeClass}"><div class="modal-header"><h2>${esc(title)}</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body">${bodyHtml}</div></div>`;ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});document.body.appendChild(ov);}
+function closeModal(){const m=document.getElementById('active-modal');if(m)m.remove();_editPhoto=null;}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+function switchTab(btn,showId){
+  const bar=btn.closest('.tab-bar');bar.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  const panel=btn.closest('.modal-body')||document.getElementById('content');
+  const sibIds=['add-bio','add-grades','ed-bio','ed-grades','imp-stu','imp-gr','imp-att','sc','ss','sb','sd'];
+  sibIds.forEach(id=>{const el=panel.querySelector('#'+id)||document.getElementById(id);if(el)el.style.display='none';});
+  const target=panel.querySelector('#'+showId)||document.getElementById(showId);if(target)target.style.display='';
+}
+</script>
+
+</body>
+</html>
